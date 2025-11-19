@@ -27,4 +27,3 @@ RSpec.describe Tinker::Config::Configuration do
     end
   end
 end
-

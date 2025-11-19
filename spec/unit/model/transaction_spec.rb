@@ -104,4 +104,3 @@ RSpec.describe Tinker::Model::Transaction do
     end
   end
 end
-

@@ -31,4 +31,3 @@ require_relative 'tinker/webhook/webhook_security'
 require_relative 'tinker/webhook/webhook_event'
 require_relative 'tinker/webhook/webhook_handler'
 require_relative 'tinker/payments'
-

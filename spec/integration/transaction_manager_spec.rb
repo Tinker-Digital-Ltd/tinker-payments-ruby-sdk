@@ -107,4 +107,3 @@ RSpec.describe 'TransactionManager Integration', type: :integration do
       )
   end
 end
-

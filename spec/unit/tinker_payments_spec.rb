@@ -71,4 +71,3 @@ RSpec.describe Tinker::Payments do
     end
   end
 end
-

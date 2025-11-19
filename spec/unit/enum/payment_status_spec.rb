@@ -19,4 +19,3 @@ RSpec.describe Tinker::Enum::PaymentStatus do
     expect(Tinker::Enum::PaymentStatus::FAILED).to eq('failed')
   end
 end
-

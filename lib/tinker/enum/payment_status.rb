@@ -10,4 +10,3 @@ module Tinker
     end
   end
 end
-

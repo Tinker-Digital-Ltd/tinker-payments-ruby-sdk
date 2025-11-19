@@ -116,4 +116,3 @@ RSpec.describe Tinker::Webhook::WebhookHandler do
     end
   end
 end
-

@@ -23,4 +23,5 @@ Gemfile.lock
 *.swp
 *.swo
 *~
+/.rspec_status
 

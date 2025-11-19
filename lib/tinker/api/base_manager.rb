@@ -13,9 +13,9 @@ module Tinker
 
       protected
 
-      def request(method, endpoint, data = {})
+      def request(_method, endpoint, data = {})
         base_url = @config.base_url.chomp('/')
-        endpoint = endpoint.start_with?('/') ? endpoint[1..] : endpoint
+        endpoint = endpoint[1..] if endpoint.start_with?('/')
         url = "#{base_url}/#{endpoint}"
 
         token = @auth_manager.get_token
@@ -39,9 +39,9 @@ module Tinker
       rescue Exception::ApiException => e
         raise e
       rescue StandardError => e
-        raise Exception::NetworkException.new("Failed to communicate with Tinker API: #{e.message}", Exception::ExceptionCode::NETWORK_ERROR, e)
+        raise Exception::NetworkException.new("Failed to communicate with Tinker API: #{e.message}",
+                                              Exception::ExceptionCode::NETWORK_ERROR, e)
       end
     end
   end
 end
-

@@ -12,9 +12,7 @@ module Tinker
                  payload
                end
 
-        unless data.is_a?(Hash)
-          raise Exception::InvalidPayloadException.new('Webhook payload must be a hash')
-        end
+        raise Exception::InvalidPayloadException.new('Webhook payload must be a hash') unless data.is_a?(Hash)
 
         WebhookEvent.new(data)
       rescue JSON::ParserError => e
@@ -35,4 +33,3 @@ module Tinker
     end
   end
 end
-

@@ -58,9 +58,9 @@ module Tinker
       rescue Exception::AuthenticationException, Exception::NetworkException => e
         raise e
       rescue StandardError => e
-        raise Exception::NetworkException.new("Failed to authenticate: #{e.message}", Exception::ExceptionCode::AUTHENTICATION_ERROR, e)
+        raise Exception::NetworkException.new("Failed to authenticate: #{e.message}",
+                                              Exception::ExceptionCode::AUTHENTICATION_ERROR, e)
       end
     end
   end
 end
-

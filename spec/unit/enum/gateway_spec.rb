@@ -15,4 +15,3 @@ RSpec.describe Tinker::Enum::Gateway do
     expect(Tinker::Enum::Gateway::STRIPE).to eq('stripe')
   end
 end
-
