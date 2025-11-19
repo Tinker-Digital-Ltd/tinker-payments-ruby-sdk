@@ -19,6 +19,40 @@ Metrics/BlockLength:
     - 'spec/**/*'
     - '*.gemspec'
 
+Metrics/MethodLength:
+  Exclude:
+    - 'spec/**/*'
+    - 'lib/tinker/model/dto/**/*'
+    - 'lib/tinker/webhook/dto/**/*'
+    - 'lib/tinker/api/base_manager.rb'
+    - 'lib/tinker/auth/authentication_manager.rb'
+    - 'lib/tinker/model/transaction.rb'
+  Max: 15
+
+Metrics/AbcSize:
+  Exclude:
+    - 'spec/**/*'
+    - 'lib/tinker/model/dto/**/*'
+    - 'lib/tinker/webhook/dto/**/*'
+    - 'lib/tinker/api/base_manager.rb'
+    - 'lib/tinker/auth/authentication_manager.rb'
+    - 'lib/tinker/http/http_client.rb'
+  Max: 20
+
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - 'spec/**/*'
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Exclude:
+    - 'spec/**/*'
+  Max: 10
+
+Metrics/ParameterLists:
+  Exclude:
+    - 'lib/tinker/model/dto/**/*'
+
 Layout/LineLength:
   Max: 120
   Exclude:

@@ -14,7 +14,7 @@ module Tinker
         @expires_at = nil
       end
 
-      def get_token
+      def token
         return @token if token_valid?
 
         fetch_token

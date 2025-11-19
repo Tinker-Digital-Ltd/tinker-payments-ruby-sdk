@@ -20,7 +20,7 @@ module Tinker
     end
 
     def transactions
-      @transactions_manager ||= Api::TransactionManager.new(
+      @transactions ||= Api::TransactionManager.new(
         config: @config,
         http_client: @http_client,
         auth_manager: @auth_manager
@@ -28,7 +28,7 @@ module Tinker
     end
 
     def webhooks
-      @webhook_handler ||= Webhook::WebhookHandler.new
+      @webhooks ||= Webhook::WebhookHandler.new
     end
   end
 end

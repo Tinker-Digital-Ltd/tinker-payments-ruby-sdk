@@ -18,7 +18,7 @@ module Tinker
         endpoint = endpoint[1..] if endpoint.start_with?('/')
         url = "#{base_url}/#{endpoint}"
 
-        token = @auth_manager.get_token
+        token = @auth_manager.token
         headers = {
           'Authorization' => "Bearer #{token}",
           'Accept' => 'application/json',

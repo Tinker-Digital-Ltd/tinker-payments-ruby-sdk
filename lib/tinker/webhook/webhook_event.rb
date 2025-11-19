@@ -31,19 +31,19 @@ module Tinker
         @source == 'settlement'
       end
 
-      def get_payment_data
+      def payment_data
         @data.is_a?(Dto::PaymentEventDataDto) ? @data : nil
       end
 
-      def get_subscription_data
+      def subscription_data
         @data.is_a?(Dto::SubscriptionEventDataDto) ? @data : nil
       end
 
-      def get_invoice_data
+      def invoice_data
         @data.is_a?(Dto::InvoiceEventDataDto) ? @data : nil
       end
 
-      def get_settlement_data
+      def settlement_data
         @data.is_a?(Dto::SettlementEventDataDto) ? @data : nil
       end
 

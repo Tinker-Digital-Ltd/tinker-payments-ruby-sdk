@@ -4,8 +4,8 @@ module Tinker
   module Config
     class Endpoints
       BASE_URL = 'https://payments.tinker.co.ke'
-      API_BASE_URL = "#{BASE_URL}/api"
-      AUTH_TOKEN_URL = "#{BASE_URL}/auth/token"
+      API_BASE_URL = "#{BASE_URL}/api".freeze
+      AUTH_TOKEN_URL = "#{BASE_URL}/auth/token".freeze
       PAYMENT_INITIATE_PATH = '/payment/initiate'
       PAYMENT_QUERY_PATH = '/payment/query'
     end

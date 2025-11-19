@@ -100,16 +100,16 @@ event = tinker.webhooks.handle_from_request(request.body.read)
 
 # Check event type
 if event.payment_event?
-  payment_data = event.get_payment_data
+  payment_data = event.payment_data
   # Handle payment.completed, payment.failed, etc.
 elsif event.subscription_event?
-  subscription_data = event.get_subscription_data
+  subscription_data = event.subscription_data
   # Handle subscription.created, subscription.cancelled, etc.
 elsif event.invoice_event?
-  invoice_data = event.get_invoice_data
+  invoice_data = event.invoice_data
   # Handle invoice.paid, invoice.failed
 elsif event.settlement_event?
-  settlement_data = event.get_settlement_data
+  settlement_data = event.settlement_data
   # Handle settlement.processed
 end
 
