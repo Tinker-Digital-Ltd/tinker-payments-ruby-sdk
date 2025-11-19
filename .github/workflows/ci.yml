@@ -22,20 +22,12 @@ jobs:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
 
-      - name: Run linter
-        continue-on-error: true
-        uses: rubocop/rubocop-github-action@v2
-        with:
-          working-directory: .
-          files: 'lib/**/*.rb'
-          fail-on-error: true
-          autocorrect: true
-          format: progress
-          color: true
-          verbose: false
-          
       - name: Run tests
         run: bundle exec rspec
+
+      - name: Run linter
+        continue-on-error: true
+        run: bundle exec rubocop
 
      
 
