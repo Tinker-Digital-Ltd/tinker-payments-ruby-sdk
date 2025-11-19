@@ -2,6 +2,7 @@
 
 require 'base64'
 require 'uri'
+require 'json'
 
 module Tinker
   module Auth

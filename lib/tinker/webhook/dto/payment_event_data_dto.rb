@@ -25,7 +25,7 @@ module Tinker
         def to_hash
           {
             'id' => @id,
-            'status' => @status.is_a?(String) ? @status : @status.to_s,
+            'status' => @status.to_s,
             'reference' => @reference,
             'amount' => @amount,
             'currency' => @currency,
