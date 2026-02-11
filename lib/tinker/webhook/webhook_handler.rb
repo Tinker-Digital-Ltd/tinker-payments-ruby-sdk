@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'openssl'
 
 module Tinker
   module Webhook
@@ -29,6 +30,28 @@ module Tinker
       def handle_as_transaction(payload)
         event = handle(payload)
         event.to_transaction
+      end
+
+      def verify_signature(payload_or_event, webhook_secret)
+        return false if webhook_secret.nil? || webhook_secret.empty?
+
+        event = payload_or_event.is_a?(WebhookEvent) ? payload_or_event : handle(payload_or_event)
+        signature = event.security.signature
+        return false unless signature&.start_with?('sha256=')
+
+        payload_without_security = {
+          id: event.id,
+          type: event.type,
+          source: event.source,
+          timestamp: event.timestamp,
+          data: event.raw_data,
+          meta: event.raw_meta
+        }
+
+        encoded = JSON.generate(payload_without_security)
+        computed = "sha256=#{OpenSSL::HMAC.hexdigest('SHA256', webhook_secret, encoded)}"
+
+        signature == computed
       end
     end
   end

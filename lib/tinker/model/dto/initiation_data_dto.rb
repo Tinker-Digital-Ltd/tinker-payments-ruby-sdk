@@ -7,21 +7,21 @@ module Tinker
         attr_reader :payment_reference, :status, :authorization_url
 
         def initialize(data)
-          @payment_reference = data['payment_reference']
+          @payment_reference = data['paymentReference'] || data['payment_reference']
           status_value = data['status'] || 'pending'
           @status = begin
             Tinker::Enum::PaymentStatus.const_get(status_value.upcase)
           rescue NameError
             Tinker::Enum::PaymentStatus::PENDING
           end
-          @authorization_url = data['authorization_url']
+          @authorization_url = data['authorizationUrl'] || data['authorization_url']
         end
 
         def to_hash
           {
-            payment_reference: @payment_reference,
+            paymentReference: @payment_reference,
             status: @status,
-            authorization_url: @authorization_url
+            authorizationUrl: @authorization_url
           }
         end
       end

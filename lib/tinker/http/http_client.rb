@@ -11,18 +11,30 @@ module Tinker
         @timeout = 30
       end
 
+      def get(url, headers: {})
+        request(url, Net::HTTP::Get, headers: headers)
+      end
+
       def post(url, headers: {}, body: nil)
+        request(url, Net::HTTP::Post, headers: headers, body: body)
+      end
+
+      private
+
+      def request(url, request_class, headers:, body: nil)
         uri = URI(url)
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = uri.scheme == 'https'
         http.read_timeout = @timeout
         http.open_timeout = @timeout
 
-        request = Net::HTTP::Post.new(uri.path)
-        headers.each { |key, value| request[key] = value }
-        request.body = body if body
+        path = uri.path
+        path += "?#{uri.query}" if uri.query
+        req = request_class.new(path)
+        headers.each { |key, value| req[key] = value }
+        req.body = body if body
 
-        response = http.request(request)
+        response = http.request(req)
         Response.new(response.code.to_i, response.body, response.to_hash)
       rescue StandardError => e
         raise Exception::NetworkException.new("Network error: #{e.message}", Exception::ExceptionCode::NETWORK_ERROR, e)

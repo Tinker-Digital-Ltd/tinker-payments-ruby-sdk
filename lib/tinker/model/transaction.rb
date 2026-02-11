@@ -6,7 +6,7 @@ module Tinker
       attr_reader :status, :initiation_data, :query_data, :callback_data
 
       def initialize(data)
-        if data['payment_reference'] && !data['id']
+        if (data['paymentReference'] || data['payment_reference']) && !data['id']
           @initiation_data = Dto::InitiationDataDto.new(data)
           @query_data = nil
           @callback_data = nil
