@@ -12,7 +12,7 @@ RSpec.describe Tinker::Config::Configuration do
 
       expect(config.api_public_key).to eq('pk_test_123')
       expect(config.api_secret_key).to eq('sk_test_456')
-      expect(config.base_url).to eq("#{Tinker::Config::Endpoints::API_BASE_URL}/")
+      expect(config.base_url).to eq("#{Tinker::Config::Endpoints::SANDBOX_BASE_URL}#{Tinker::Config::Endpoints::API_VERSION_PATH}/")
     end
   end
 
