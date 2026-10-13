@@ -20,6 +20,42 @@ RSpec.describe Tinker::Api::SubscriptionManager do
     end
   end
 
+  it 'sends every managed operation with exact payloads and escaped IDs' do
+    checkout = Tinker::Model::Dto::ManagedCheckout.new(
+      external_customer_id: 'workspace', email: 'buyer@example.com', name: 'Buyer', currency: 'EUR',
+      unit_amount: 15_000, quantity: 3, interval: 'year', return_url: 'https://example.com/return', idempotency_key: 'checkout-key'
+    )
+    expect(checkout.to_hash).to eq(
+      external_customer_id: 'workspace', email: 'buyer@example.com', name: 'Buyer', currency: 'EUR',
+      unit_amount: 15_000, quantity: 3, interval: 'year', return_url: 'https://example.com/return', idempotency_key: 'checkout-key'
+    )
+    manager.checkout(checkout)
+    manager.billing_resource('sub/a b')
+    manager.change_quantity('sub/a b', 4, 'change-key')
+    manager.schedule_quantity('sub/a b', 2, 'schedule-key')
+    manager.clear_scheduled_quantity('sub/a b', 'clear-key')
+    manager.set_cancel_at_renewal('sub/a b', false, 'resume-key')
+    manager.billing_operation('key/a b')
+    manager.payment_method_portal('sub/a b', 'https://example.com/return', 'portal-key')
+    page = manager.billing_payment_history('sub/a b', 'in/a &b', 123)
+    manager.billing_payment_history('sub/a b')
+    base = 'merchant/billing/resources/sub%2Fa%20b'
+    expect(calls.map { |method, path, body, _| [method, path, body] }).to eq([
+                                                                               ['POST', 'merchant/billing/checkout', JSON.parse(checkout.to_hash.to_json)],
+                                                                               ['GET', base, nil],
+                                                                               ['POST', "#{base}/quantity", { 'quantity' => 4, 'idempotency_key' => 'change-key' }],
+                                                                               ['POST', "#{base}/schedule", { 'quantity' => 2, 'idempotency_key' => 'schedule-key' }],
+                                                                               ['POST', "#{base}/unschedule", { 'idempotency_key' => 'clear-key' }],
+                                                                               ['POST', "#{base}/cancel", { 'cancel' => false, 'idempotency_key' => 'resume-key' }],
+                                                                               ['GET', 'merchant/billing/operations/key%2Fa%20b', nil],
+                                                                               ['POST', "#{base}/payment-method", { 'return_url' => 'https://example.com/return', 'idempotency_key' => 'portal-key' }],
+                                                                               ['GET', "#{base}/payment-history?starting_after=in%2Fa+%26b&snapshot=123", nil],
+                                                                               ['GET', "#{base}/payment-history", nil]
+                                                                             ])
+    expect(calls.map(&:last).uniq).to eq(['Bearer token'])
+    expect(page).to eq('snapshot' => 123, 'next_cursor' => 'in_next', 'has_more' => true)
+  end
+
   [429, 200, 502].each do |status|
     context "with response status #{status}" do
       let(:response) do
