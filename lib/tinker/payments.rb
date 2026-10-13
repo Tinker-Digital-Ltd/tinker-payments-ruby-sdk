@@ -13,7 +13,8 @@ require_relative 'webhook/webhook_handler'
 module Tinker
   class Payments
     def initialize(api_public_key:, api_secret_key:, http_client: nil, base_url: nil)
-      @config = Config::Configuration.new(api_public_key: api_public_key, api_secret_key: api_secret_key, base_url: base_url)
+      @config = Config::Configuration.new(api_public_key: api_public_key, api_secret_key: api_secret_key,
+                                          base_url: base_url)
       @http_client = http_client || Http::HttpClient.new
       @auth_manager = Auth::AuthenticationManager.new(config: @config, http_client: @http_client)
     end

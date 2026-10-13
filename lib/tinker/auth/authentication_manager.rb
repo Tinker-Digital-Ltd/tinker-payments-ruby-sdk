@@ -80,9 +80,8 @@ module Tinker
       def extract_error_message(result)
         if result.is_a?(Hash)
           error = result['error']
-          if error.is_a?(Hash)
-            return error['message'] || error['code'] || 'Authentication failed'
-          end
+          return error['message'] || error['code'] || 'Authentication failed' if error.is_a?(Hash)
+
           return result['message'] || 'Authentication failed'
         end
         'Authentication failed'

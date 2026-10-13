@@ -24,7 +24,9 @@ module Tinker
         endpoint = Config::Endpoints::SUBSCRIPTION_BASE_PATH
         params = []
         params << "plan_id=#{CGI.escape(plan_id)}" if plan_id && !plan_id.strip.empty?
-        params << "external_customer_id=#{CGI.escape(external_customer_id)}" if external_customer_id && !external_customer_id.strip.empty?
+        if external_customer_id && !external_customer_id.strip.empty?
+          params << "external_customer_id=#{CGI.escape(external_customer_id)}"
+        end
         endpoint += "?#{params.join('&')}" unless params.empty?
 
         wrapped = request('GET', endpoint, nil)
@@ -34,6 +36,7 @@ module Tinker
       def cancel(subscription_id)
         request('POST', "#{Config::Endpoints::SUBSCRIPTION_BASE_PATH}/#{subscription_id}/cancel", nil)
       end
+
       def checkout(request)
         request('POST', 'merchant/billing/checkout', request.to_hash)
       end

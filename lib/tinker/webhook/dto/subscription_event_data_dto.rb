@@ -4,7 +4,8 @@ module Tinker
   module Webhook
     module Dto
       class SubscriptionEventDataDto
-        attr_reader :id, :status, :plan_id, :account_id, :current_period_start, :current_period_end, :created_at, :cancelled_at, :paused_at, :reactivated_at
+        attr_reader :id, :status, :plan_id, :account_id, :current_period_start, :current_period_end, :created_at,
+                    :cancelled_at, :paused_at, :reactivated_at
 
         def initialize(data)
           @id = data['subscription_id'] || data['id']

@@ -15,7 +15,9 @@ module Tinker
         end
 
         resolved_base_url = resolved_base_url.chomp('/')
-        resolved_base_url = "#{resolved_base_url}#{Endpoints::API_VERSION_PATH}" unless resolved_base_url.end_with?(Endpoints::API_VERSION_PATH)
+        unless resolved_base_url.end_with?(Endpoints::API_VERSION_PATH)
+          resolved_base_url = "#{resolved_base_url}#{Endpoints::API_VERSION_PATH}"
+        end
 
         @base_url = "#{resolved_base_url}/"
         @auth_url = "#{resolved_base_url}#{Endpoints::AUTH_TOKEN_PATH}"

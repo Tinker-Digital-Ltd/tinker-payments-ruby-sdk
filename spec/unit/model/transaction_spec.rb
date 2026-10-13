@@ -41,6 +41,22 @@ RSpec.describe Tinker::Model::Transaction do
     end
   end
 
+  describe 'status fallback without transaction details' do
+    [{}, { 'status' => 'unknown-provider-status' }].each do |data|
+      it "treats #{data.inspect} as pending" do
+        transaction = described_class.new(data)
+        expect(transaction).to be_pending
+        expect(transaction.initiation_data).to be_nil
+        expect(transaction.query_data).to be_nil
+        expect(transaction.callback_data).to be_nil
+      end
+    end
+
+    it 'retains a recognized status without transaction details' do
+      expect(described_class.new('status' => 'failed')).to be_failed
+    end
+  end
+
   describe '#successful?' do
     it 'returns true for successful transactions' do
       data = {
