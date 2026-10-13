@@ -39,6 +39,15 @@ module Tinker
         signature = event.security.signature
         return false unless signature&.start_with?('sha256=')
 
+        computed = computed_signature(event, webhook_secret)
+        return false unless signature.bytesize == computed.bytesize
+
+        OpenSSL.fixed_length_secure_compare(signature, computed)
+      end
+
+      private
+
+      def computed_signature(event, webhook_secret)
         payload_without_security = {
           id: event.id,
           type: event.type,
@@ -49,9 +58,7 @@ module Tinker
         }
 
         encoded = JSON.generate(payload_without_security)
-        computed = "sha256=#{OpenSSL::HMAC.hexdigest('SHA256', webhook_secret, encoded)}"
-
-        signature == computed
+        "sha256=#{OpenSSL::HMAC.hexdigest('SHA256', webhook_secret, encoded)}"
       end
     end
   end
