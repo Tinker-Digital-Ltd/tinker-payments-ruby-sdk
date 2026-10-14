@@ -17,6 +17,19 @@ module Tinker
         @security = WebhookSecurity.new(payload['security'] || {})
       end
 
+      def onboarding_event?
+        @source == 'onboarding'
+      end
+
+      # Verify the signature before acknowledging a setup test.
+      def setup_test?
+        onboarding_event? && @type == 'setup.webhook_test'
+      end
+
+      def onboarding_data
+        @data.is_a?(Dto::OnboardingEventDataDto) ? @data : nil
+      end
+
       def payment_event?
         @source == 'payment'
       end
@@ -60,6 +73,8 @@ module Tinker
 
       def create_event_data(data, source)
         case source
+        when 'onboarding'
+          Dto::OnboardingEventDataDto.new(data)
         when 'payment'
           Dto::PaymentEventDataDto.new(data)
         when 'subscription'

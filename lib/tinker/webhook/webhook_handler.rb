@@ -37,7 +37,7 @@ module Tinker
 
         event = payload_or_event.is_a?(WebhookEvent) ? payload_or_event : handle(payload_or_event)
         signature = event.security.signature
-        return false unless signature&.start_with?('sha256=')
+        return false unless event.security.algorithm == 'HMAC-SHA256' && signature&.start_with?('sha256=')
 
         computed = computed_signature(event, webhook_secret)
         return false unless signature.bytesize == computed.bytesize
@@ -47,17 +47,29 @@ module Tinker
 
       private
 
+      def sort_maps(value)
+        case value
+        when Hash
+          value.keys.sort.to_h { |key| [key, sort_maps(value[key])] }
+        when Array
+          value.map { |item| sort_maps(item) }
+        else
+          value
+        end
+      end
+
       def computed_signature(event, webhook_secret)
         payload_without_security = {
           id: event.id,
           type: event.type,
           source: event.source,
           timestamp: event.timestamp,
-          data: event.raw_data,
-          meta: event.raw_meta
+          data: sort_maps(event.raw_data),
+          meta: sort_maps(event.raw_meta)
         }
 
         encoded = JSON.generate(payload_without_security)
+        encoded = encoded.gsub(/[<>&\u2028\u2029]/) { |char| format('\\u%04x', char.ord) }
         "sha256=#{OpenSSL::HMAC.hexdigest('SHA256', webhook_secret, encoded)}"
       end
     end
