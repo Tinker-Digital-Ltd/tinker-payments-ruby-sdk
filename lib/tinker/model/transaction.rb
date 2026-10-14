@@ -6,7 +6,7 @@ module Tinker
       attr_reader :status, :initiation_data, :query_data, :callback_data
 
       def initialize(data)
-        if data['payment_reference'] && !data['id']
+        if (data['paymentReference'] || data['payment_reference']) && !data['id']
           @initiation_data = Dto::InitiationDataDto.new(data)
           @query_data = nil
           @callback_data = nil
@@ -20,12 +20,7 @@ module Tinker
           @initiation_data = nil
           @query_data = nil
           @callback_data = nil
-          status_value = data['status'] || 'pending'
-          @status = begin
-            Enum::PaymentStatus.const_get(status_value.upcase)
-          rescue NameError
-            Enum::PaymentStatus::PENDING
-          end
+          @status = status_from(data['status'] || 'pending')
         end
       end
 
@@ -43,6 +38,14 @@ module Tinker
 
       def failed?
         @status == Enum::PaymentStatus::FAILED
+      end
+
+      private
+
+      def status_from(value)
+        Enum::PaymentStatus.const_get(value.upcase)
+      rescue NameError
+        Enum::PaymentStatus::PENDING
       end
     end
   end

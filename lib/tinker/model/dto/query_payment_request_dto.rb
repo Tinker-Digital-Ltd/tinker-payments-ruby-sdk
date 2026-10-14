@@ -15,7 +15,7 @@ module Tinker
           gateway_value = @gateway.is_a?(String) ? @gateway : @gateway.to_s
 
           {
-            payment_reference: @payment_reference,
+            reference: @payment_reference,
             gateway: gateway_value
           }
         end

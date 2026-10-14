@@ -7,11 +7,11 @@ module Tinker
         attr_reader :id, :status, :invoice_number, :amount, :currency, :subscription_id, :created_at, :paid_at
 
         def initialize(data)
-          @id = data['id']
-          @status = data['status']
+          @id = data['invoice_id'] || data['id']
+          @status = data['status'] || ''
           @invoice_number = data['invoice_number'] || ''
-          @amount = data['amount'].to_f
-          @currency = data['currency']
+          @amount = (data['amount'] || 0).to_f
+          @currency = data['currency'] || ''
           @subscription_id = data['subscription_id'] || ''
           @created_at = data['created_at'] || ''
           @paid_at = data['paid_at']
@@ -20,6 +20,7 @@ module Tinker
         def to_hash
           {
             id: @id,
+            invoice_id: @id,
             status: @status,
             invoice_number: @invoice_number,
             amount: @amount,

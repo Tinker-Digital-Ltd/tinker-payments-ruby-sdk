@@ -10,7 +10,7 @@ RSpec.describe 'TransactionManager Integration', type: :integration do
   describe '#initiate' do
     it 'initiates a payment request' do
       stub_auth_request
-      stub_request(:post, 'https://payments.tinker.co.ke/api/payment/initiate')
+      stub_request(:post, 'https://sandbox-api.tinkerpayments.com/v1/merchant/payment/initiate')
         .with(
           headers: {
             'Authorization' => 'Bearer test_token',
@@ -27,9 +27,17 @@ RSpec.describe 'TransactionManager Integration', type: :integration do
         .to_return(
           status: 200,
           body: {
-            payment_reference: 'TXN-abc123',
-            status: 'pending',
-            authorization_url: 'https://example.com/auth'
+            success: true,
+            data: {
+              paymentReference: 'TXN-abc123',
+              status: 'pending',
+              authorization_url: 'https://example.com/auth'
+            },
+            meta: {
+              request_id: 'req-auth-1',
+              timestamp: '2026-02-11T22:52:45Z',
+              environment: 'sandbox'
+            }
           }.to_json
         )
 
@@ -52,7 +60,7 @@ RSpec.describe 'TransactionManager Integration', type: :integration do
   describe '#query' do
     it 'queries a payment' do
       stub_auth_request
-      stub_request(:post, 'https://payments.tinker.co.ke/api/payment/query')
+      stub_request(:post, 'https://sandbox-api.tinkerpayments.com/v1/merchant/payment/query')
         .with(
           headers: {
             'Authorization' => 'Bearer test_token',
@@ -60,20 +68,28 @@ RSpec.describe 'TransactionManager Integration', type: :integration do
             'Accept' => 'application/json'
           },
           body: {
-            payment_reference: 'TXN-abc123',
+            reference: 'TXN-abc123',
             gateway: 'mpesa'
           }.to_json
         )
         .to_return(
           status: 200,
           body: {
-            id: '123',
-            reference: 'REF-123',
-            status: 'success',
-            amount: 100.0,
-            currency: 'KES',
-            created_at: '2024-01-01T00:00:00Z',
-            channel: 'mpesa'
+            success: true,
+            data: {
+              id: '123',
+              reference: 'REF-123',
+              status: 'success',
+              amount: 100.0,
+              currency: 'KES',
+              created_at: '2024-01-01T00:00:00Z',
+              channel: 'mpesa'
+            },
+            meta: {
+              request_id: 'req-query-1',
+              timestamp: '2026-02-11T22:52:45Z',
+              environment: 'sandbox'
+            }
           }.to_json
         )
 
@@ -91,7 +107,7 @@ RSpec.describe 'TransactionManager Integration', type: :integration do
   end
 
   def stub_auth_request
-    stub_request(:post, 'https://payments.tinker.co.ke/auth/token')
+    stub_request(:post, 'https://sandbox-api.tinkerpayments.com/v1/auth/token')
       .with(
         headers: {
           'Content-Type' => 'application/x-www-form-urlencoded',
@@ -101,8 +117,16 @@ RSpec.describe 'TransactionManager Integration', type: :integration do
       .to_return(
         status: 200,
         body: {
-          token: 'test_token',
-          expires_in: 3600
+          success: true,
+          data: {
+            token: 'test_token',
+            expires_in: 3600
+          },
+          meta: {
+            request_id: 'req-token-1',
+            timestamp: '2026-02-11T22:52:45Z',
+            environment: 'sandbox'
+          }
         }.to_json
       )
   end

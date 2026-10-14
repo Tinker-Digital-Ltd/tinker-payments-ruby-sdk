@@ -3,16 +3,31 @@
 module Tinker
   module Webhook
     class WebhookEvent
-      attr_reader :id, :type, :source, :timestamp, :data, :meta, :security
+      attr_reader :id, :type, :source, :timestamp, :data, :meta, :security, :raw_data, :raw_meta
 
       def initialize(payload)
         @id = payload['id']
         @type = payload['type']
         @source = payload['source']
         @timestamp = payload['timestamp']
-        @data = create_event_data(payload['data'], @source)
-        @meta = WebhookMeta.new(payload['meta'] || {})
+        @raw_data = payload['data'].is_a?(Hash) ? payload['data'] : {}
+        @raw_meta = payload['meta'].is_a?(Hash) ? payload['meta'] : {}
+        @data = create_event_data(@raw_data, @source)
+        @meta = WebhookMeta.new(@raw_meta)
         @security = WebhookSecurity.new(payload['security'] || {})
+      end
+
+      def onboarding_event?
+        @source == 'onboarding'
+      end
+
+      # Verify the signature before acknowledging a setup test.
+      def setup_test?
+        onboarding_event? && @type == 'setup.webhook_test'
+      end
+
+      def onboarding_data
+        @data.is_a?(Dto::OnboardingEventDataDto) ? @data : nil
       end
 
       def payment_event?
@@ -58,6 +73,8 @@ module Tinker
 
       def create_event_data(data, source)
         case source
+        when 'onboarding'
+          Dto::OnboardingEventDataDto.new(data)
         when 'payment'
           Dto::PaymentEventDataDto.new(data)
         when 'subscription'

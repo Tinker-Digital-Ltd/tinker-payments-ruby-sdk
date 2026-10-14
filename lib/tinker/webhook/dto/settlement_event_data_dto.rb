@@ -4,13 +4,14 @@ module Tinker
   module Webhook
     module Dto
       class SettlementEventDataDto
-        attr_reader :id, :status, :amount, :currency, :settlement_date, :created_at, :processed_at
+        attr_reader :id, :status, :amount, :net_amount, :currency, :settlement_date, :created_at, :processed_at
 
         def initialize(data)
-          @id = data['id']
-          @status = data['status']
-          @amount = data['amount'].to_f
-          @currency = data['currency']
+          @id = data['settlement_id'] || data['id']
+          @status = data['status'] || ''
+          @amount = (data['amount'] || 0).to_f
+          @net_amount = data['net_amount']&.to_f
+          @currency = data['currency'] || ''
           @settlement_date = data['settlement_date'] || ''
           @created_at = data['created_at'] || ''
           @processed_at = data['processed_at']
@@ -19,8 +20,10 @@ module Tinker
         def to_hash
           {
             id: @id,
+            settlement_id: @id,
             status: @status,
             amount: @amount,
+            net_amount: @net_amount,
             currency: @currency,
             settlement_date: @settlement_date,
             created_at: @created_at,
