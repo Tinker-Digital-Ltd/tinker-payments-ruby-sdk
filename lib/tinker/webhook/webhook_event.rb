@@ -30,6 +30,10 @@ module Tinker
         @data.is_a?(Dto::OnboardingEventDataDto) ? @data : nil
       end
 
+      def cancellation_data
+        @data.is_a?(Model::CheckoutCancellation) ? @data : nil
+      end
+
       def payment_event?
         @source == 'payment'
       end
@@ -72,6 +76,14 @@ module Tinker
       private
 
       def create_event_data(data, source)
+        if source == 'payment' && @type == 'checkout.cancellation.updated.v1'
+          return Model::CheckoutCancellation.new(data.fetch('cancellation', {}))
+        end
+
+        source_event_data(data, source)
+      end
+
+      def source_event_data(data, source)
         case source
         when 'onboarding'
           Dto::OnboardingEventDataDto.new(data)

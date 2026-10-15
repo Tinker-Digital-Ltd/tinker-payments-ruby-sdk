@@ -290,3 +290,8 @@ handle manual refunds and withdrawals.
 Lifecycle tests use `spec/fixtures/merchant-lifecycle.json`, copied from the
 OpenAPI repository's canonical fixture. Override with `TINKER_LIFECYCLE_FIXTURES`
 for coordinated contract changes and refresh the checked-in copy in each release.
+
+Cancellation history returns the newest 100 requests and `has_more`; use the
+single-request lookup to track a known older request. Signed
+`checkout.cancellation.updated.v1` events contain a cancellation resource, not
+a payment transaction. Verify signatures before acting on any event.

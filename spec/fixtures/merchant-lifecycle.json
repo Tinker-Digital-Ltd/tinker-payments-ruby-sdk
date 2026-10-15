@@ -32,7 +32,8 @@
             "source": "app",
             "status": "pending_review",
             "created_at": "2026-10-15T10:00:00Z",
-            "updated_at": "2026-10-15T10:00:00Z"
+            "updated_at": "2026-10-15T10:00:00Z",
+            "requested_by_app_id": "app-1"
           },
           "payment": {
             "id": "payment/a b",
@@ -80,7 +81,8 @@
               "source": "app",
               "status": "pending_review",
               "created_at": "2026-10-15T10:00:00Z",
-              "updated_at": "2026-10-15T10:00:00Z"
+              "updated_at": "2026-10-15T10:00:00Z",
+              "requested_by_app_id": "app-1"
             }
           ]
         }
@@ -105,7 +107,8 @@
           "source": "app",
           "status": "pending_review",
           "created_at": "2026-10-15T10:00:00Z",
-          "updated_at": "2026-10-15T10:00:00Z"
+          "updated_at": "2026-10-15T10:00:00Z",
+          "requested_by_app_id": "app-1"
         }
       },
       "schema": "Refund"
@@ -327,7 +330,8 @@
             "supported": true,
             "eligible": true,
             "reason_code": "supported"
-          }
+          },
+          "has_more": false
         }
       },
       "schema": "CancellationHistory"
