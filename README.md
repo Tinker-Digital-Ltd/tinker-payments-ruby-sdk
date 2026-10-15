@@ -178,8 +178,6 @@ remains uncertain.
 
 ## Managed recurring billing
 
-Requires a Tinker server with the managed-billing, payment-method and payment-history
-endpoints enabled. Installing the SDK does not deploy or enable those endpoints.
 Existing plan-based subscription methods remain available.
 
 Checkout uses exact integer minor-unit prices (for example, `15000` means EUR 150.00),

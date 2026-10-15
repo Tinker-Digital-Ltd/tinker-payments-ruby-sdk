@@ -8,4 +8,4 @@
 - Require stable caller-provided idempotency keys for these mutations and preserve structured API error details.
 - Parse and verify signed refund, withdrawal and checkout-cancellation resource updates without converting them into payment transactions.
 
-Deploy the matching backend migrations and endpoints before publishing this SDK. Existing payment initiation, payment queries and subscription APIs remain available. No automated payout transfer is implied by request acceptance.
+Existing payment initiation, payment queries and subscription APIs remain available. No automated payout transfer is implied by request acceptance.
