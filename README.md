@@ -293,5 +293,8 @@ for coordinated contract changes and refresh the checked-in copy in each release
 
 Cancellation history returns the newest 100 requests and `has_more`; use the
 single-request lookup to track a known older request. Signed
-`checkout.cancellation.updated.v1` events contain a cancellation resource, not
-a payment transaction. Verify signatures before acting on any event.
+`checkout.cancellation.updated.v1`, `refund.updated.v1`, and
+`withdrawal.updated.v1` events contain the corresponding resource in
+`data.resource`. Their parsed data is a cancellation, refund, or payout;
+transaction conversion returns null. Verify signatures before acting on any
+event and deduplicate delivery by event ID.

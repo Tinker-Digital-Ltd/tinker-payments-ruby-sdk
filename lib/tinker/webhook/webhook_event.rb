@@ -34,6 +34,14 @@ module Tinker
         @data.is_a?(Model::CheckoutCancellation) ? @data : nil
       end
 
+      def refund_data
+        @data.is_a?(Model::Refund) ? @data : nil
+      end
+
+      def payout_data
+        @data.is_a?(Model::Payout) ? @data : nil
+      end
+
       def payment_event?
         @source == 'payment'
       end
@@ -76,9 +84,13 @@ module Tinker
       private
 
       def create_event_data(data, source)
-        if source == 'payment' && @type == 'checkout.cancellation.updated.v1'
-          return Model::CheckoutCancellation.new(data.fetch('cancellation', {}))
-        end
+        resource_types = {
+          'checkout.cancellation.updated' => Model::CheckoutCancellation,
+          'refund.updated' => Model::Refund,
+          'withdrawal.updated' => Model::Payout
+        }
+        resource_type = resource_types[@type.to_s.sub(/\.v[^.]+\z/, '')] if source == 'payment'
+        return resource_type.new(data.fetch('resource', {})) if resource_type
 
         source_event_data(data, source)
       end
