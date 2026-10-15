@@ -251,3 +251,42 @@ credits or reconciling them automatically.
 The dashboard sends a signed `setup.webhook_test` event with `source: "onboarding"`, `data.message`, and setup metadata. Parse it with the webhook handler, verify its signature using the application webhook secret, then acknowledge it with HTTP 200, 202, or 204. Setup events have onboarding data and do not convert to payment transactions. Event classification alone does not authenticate a request. Invalid signatures must be rejected; no payment lookup or fulfillment is needed for a valid setup test.
 
 The signature uses HMAC-SHA256 over the JSON envelope excluding `security`, preserving envelope field order and Go JSON map ordering and escaping.
+
+## Refunds, merchant payouts and checkout cancellation
+
+Payouts withdraw the merchant's available Tinker wallet balance to an existing
+verified payout account. The app owner enables SDK withdrawal access in the
+dashboard; the SDK cannot approve requests or verify payout accounts. Fees come
+out of the requested amount: requesting 100 with a fee of 2 reserves 100 and pays
+98. Quote first and send the quoted fee.
+
+```ruby
+refund = tinker.transactions.refund(payment_id,
+  Tinker::Model::Dto::RefundRequest.new(reason: 'requested_by_customer', amount: 25), 'refund-order-42')
+methods = tinker.payouts.methods
+quote = tinker.payouts.quote(payout_method_id: method_id, amount: 100, currency: 'KES')
+payout = tinker.payouts.request_payout(
+  Tinker::Model::Dto::PayoutRequest.new(payout_method_id: method_id, amount: 100,
+    currency: 'KES', expected_fee_amount: quote['fee_amount']), 'withdrawal-42')
+status = tinker.payouts.get(payout.withdrawal.id)
+cancellation = tinker.transactions.cancel_checkout(unpaid_payment_id,
+  Tinker::Model::Dto::CancellationRequest.new(reason: 'Order cancelled'), 'cancel-order-42')
+```
+
+Reuse the same key for retries of one operation. Keys are required, limited to
+255 UTF-8 bytes, and never silently regenerated. Different payloads with one key
+produce a conflict. `pending_review` refunds and `pending_approval` payouts are
+accepted requests, not completed transfers. Only `refunded`, `paid`, or
+provider-confirmed `cancelled` indicate completion. Query `outcome_unknown`
+cancellations instead of assuming failure and retrying.
+
+Use `refunds`, `get_refund`, `cancellations`, `get_cancellation`, and
+`payouts.list` for history and status. `ApiException#details` preserves the full
+error envelope; `details.dig('error', 'details')` includes the recorded request ID
+for unsupported cancellation (422) or updated quote for a fee conflict (409).
+Subscription cancellation is a separate operation. Existing administrative queues
+handle manual refunds and withdrawals.
+
+Lifecycle tests use `spec/fixtures/merchant-lifecycle.json`, copied from the
+OpenAPI repository's canonical fixture. Override with `TINKER_LIFECYCLE_FIXTURES`
+for coordinated contract changes and refresh the checked-in copy in each release.
