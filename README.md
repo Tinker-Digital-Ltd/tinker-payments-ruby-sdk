@@ -1,190 +1,45 @@
 # Tinker Payments Ruby SDK
 
-Official Ruby SDK for [Tinker Payments API](https://payments.tinker.co.ke/docs).
+Ruby 3.0+ SDK for payments, subscriptions and signed webhooks. Keep secret keys on the server.
 
-## Installation
+## Install and configure
 
-Add this line to your application's Gemfile:
+Add `gem 'tinker-pay-ruby-sdk'` to your Gemfile and run `bundle install`, or run:
 
-```ruby
-gem 'tinker-pay-ruby-sdk'
-```
-
-And then execute:
-
-```bash
-bundle install
-```
-
-Or install it yourself as:
-
-```bash
+```sh
 gem install tinker-pay-ruby-sdk
 ```
 
-## Requirements
-
-- Ruby 3.0 or higher
-- No external runtime dependencies (uses standard library)
-
-## Quick Start
-
 ```ruby
 require 'tinker'
 
-tinker = Tinker::Payments.new(
-  api_public_key: 'your-public-key',
-  api_secret_key: 'your-secret-key'
+tinker = Tinker::Payments.new(api_public_key: 'pk_test_xxx', api_secret_key: 'sk_test_xxx')
+```
+
+Test key prefixes select `https://sandbox-api.tinkerpayments.com/v1/`; other keys select `https://api.tinkerpayments.com/v1/`. Override with `base_url:`. A custom `http_client:` must implement `get(url, headers:)` and `post(url, headers:, body:)`, returning responses with `status_code`, `json` and `headers`.
+
+## Payments
+
+```ruby
+request = Tinker::Model::Dto::InitiatePaymentRequestDto.new(
+  amount: 100, currency: 'KES', gateway: Tinker::Enum::Gateway::MPESA,
+  merchant_reference: 'ORDER-12345',
+  return_url: 'https://merchant.example/payment/return',
+  customer_phone: '+254712345678'
 )
+payment = tinker.transactions.initiate(request)
+result = tinker.transactions.query(Tinker::Model::Dto::QueryPaymentRequestDto.new(
+  payment_reference: 'TXN-abc123xyz', gateway: Tinker::Enum::Gateway::MPESA
+))
 ```
 
-## Usage
+Payments use currency units. Mpesa requires `customer_phone`; `return_url` is the browser destination, while webhooks are configured separately in the dashboard. Hosted providers may return `payment.initiation_data&.authorization_url` for a redirect.
 
-### Initiate a Payment
-
-```ruby
-require 'tinker'
-
-begin
-  initiate_request = Tinker::Model::Dto::InitiatePaymentRequestDto.new(
-    amount: 100.00,
-    currency: 'KES',
-    gateway: Tinker::Enum::Gateway::MPESA,
-    merchant_reference: 'ORDER-12345',
-    return_url: 'https://your-app.com/payment/return',
-    customer_phone: '+254712345678',
-    transaction_desc: 'Payment for order #12345',
-    metadata: { order_id: '12345' }
-  )
-
-  transaction = tinker.transactions.initiate(initiate_request)
-  initiation_data = transaction.initiation_data
-
-  if initiation_data&.authorization_url
-    # Redirect user to authorization URL (Paystack, Stripe, etc.)
-    redirect_to initiation_data.authorization_url
-  end
-rescue Tinker::Exception::ApiException => e
-  puts "API Error: #{e.message}"
-rescue Tinker::Exception::NetworkException => e
-  puts "Network Error: #{e.message}"
-end
-```
-
-**Note:** The `return_url` is where users are redirected after payment completion. Webhooks are configured separately in your dashboard.
-
-### Query a Transaction
-
-```ruby
-query_request = Tinker::Model::Dto::QueryPaymentRequestDto.new(
-  payment_reference: 'TXN-abc123xyz',
-  gateway: Tinker::Enum::Gateway::MPESA
-)
-
-transaction = tinker.transactions.query(query_request)
-
-if transaction.successful?
-  query_data = transaction.query_data
-  puts "Amount: #{query_data.amount} #{query_data.currency}"
-end
-```
-
-### Handle Webhooks
-
-Webhooks support multiple event types: payment, subscription, invoice, and settlement. Check the event type and handle accordingly:
-
-```ruby
-require 'tinker'
-
-event = tinker.webhooks.handle_from_request(request.body.read)
-
-# Check event type
-if event.payment_event?
-  payment_data = event.payment_data
-  # Handle payment.completed, payment.failed, etc.
-elsif event.subscription_event?
-  subscription_data = event.subscription_data
-  # Handle subscription.created, subscription.cancelled, etc.
-elsif event.invoice_event?
-  invoice_data = event.invoice_data
-  # Handle invoice.paid, invoice.failed
-elsif event.settlement_event?
-  settlement_data = event.settlement_data
-  # Handle settlement.processed
-end
-
-# Access event details
-puts "Event type: #{event.type}"        # e.g., "payment.completed"
-puts "Event source: #{event.source}"    # e.g., "payment"
-puts "App ID: #{event.meta.app_id}"
-puts "Signature: #{event.security.signature}"
-```
-
-For payment events only, you can convert to a `Transaction` object:
-
-```ruby
-transaction = tinker.webhooks.handle_as_transaction(request.body.read)
-if transaction && transaction.successful?
-  callback_data = transaction.callback_data
-  puts "Payment successful: #{callback_data.reference}"
-end
-```
-
-## Custom HTTP Client
-
-You can use your own HTTP client by passing it to the constructor:
-
-```ruby
-require 'tinker'
-
-# Create a custom HTTP client that responds to #post(url, headers:, body:)
-# and returns an object with #status_code, #body, and #json methods
-custom_client = MyCustomHttpClient.new
-
-tinker = Tinker::Payments.new(
-  api_public_key: 'your-public-key',
-  api_secret_key: 'your-secret-key',
-  http_client: custom_client
-)
-```
-
-## Documentation
-
-For detailed API documentation, visit [Tinker Payments API Documentation](https://payments.tinker.co.ke/docs).
-
-## Development
-
-After checking out the repo, run `bundle install` to install dependencies. Then, run `rake spec` to run the tests.
-
-## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/tinker/payments-ruby-sdk.
-
-## License
-
-MIT License
-
-
-## API errors
-
-API exceptions preserve `http_status`, `error_code`, `provider_code`, `request_id`, `retry_after`, and `outcome`.
-Request IDs prefer `error.request_id` over the `X-Request-ID` header. `Retry-After`
-is retained as its original header string. Non-JSON HTTP failures retain status and
-headers as API errors with an unknown outcome. Existing exception constructors and
-legacy code/message access remain compatible.
-
-Only an explicit `not_applied` outcome confirms no mutation. A missing outcome
-remains uncertain.
+Plan-based subscriptions use `tinker.subscriptions.create_plan`, `list_plans`, `create`, `list` and `cancel` with the request DTOs in `Tinker::Model::Dto`.
 
 ## Managed recurring billing
 
-Existing plan-based subscription methods remain available.
-
-Checkout uses exact integer minor-unit prices (for example, `15000` means EUR 150.00),
-an explicit recurring interval (`month` or `year`), and a quantity. The SDK does not
-convert prices or apply automatic discounts. Managed responses are unwrapped API
-data objects/maps; payment history includes `items`, `snapshot`, `has_more` and
-`next_cursor`.
+Checkout uses exact integer minor-unit prices (`15000` = EUR 150.00), a `month` or `year` interval, and a quantity. The SDK does not convert prices or apply discounts. Responses are unwrapped data maps/objects.
 
 | Method | Purpose |
 |---|---|
@@ -199,7 +54,7 @@ data objects/maps; payment history includes `items`, `snapshot`, `has_more` and
 | `billing_payment_history` | Read one page of captured payments and adjustments |
 
 ```ruby
-billing = payments.subscriptions
+billing = tinker.subscriptions
 billing.checkout(Tinker::Model::Dto::ManagedCheckout.new(
   external_customer_id: 'workspace-123', email: 'buyer@example.com', name: 'Buyer',
   currency: 'EUR', unit_amount: 15000, quantity: 3, interval: 'year',
@@ -211,44 +66,18 @@ billing.payment_method_portal('resource-id', 'https://example.com/billing', 'por
 page = billing.billing_payment_history('resource-id', '', 0)
 # After an uncertain command response, recover using the SAME key:
 operation = billing.billing_operation('quantity-123')
-# Rescue Tinker::Exception::ApiException and inspect error.http_status, error.outcome, etc.
 ```
 
 Pass Integer values for minor-unit amounts, quantities and snapshots; do not convert
 through floating-point prices. `ManagedCheckout` exposes `to_hash`.
 
-Use a stable, unique idempotency key for each mutation, and reuse it only with the
-same payload. After a timeout, retrieve the durable result with the operation lookup
-method. Missing or pending results do not prove a charge failed. Do not retry with a
-new key to work around an uncertain result. Only an explicit `outcome == "not_applied"`
-confirms no mutation; missing outcome remains uncertain. No automatic charge retry is
-performed by these methods.
+Use a stable key per mutation and reuse it with the same payload after a lost response. Recover through the operation lookup; missing or pending results remain uncertain. Only an explicit `outcome` of `not_applied` confirms no mutation.
 
-The payment-method portal updates payment details only. It cannot change quantity or
-price, and paying an overdue invoice is a separate action through its hosted invoice
-URL. Reuse the operation key after an uncertain response; use a new key to deliberately
-open a fresh session after expiry. The server checks app ownership and requires a
-managed subscription with a dedicated customer.
+The payment-method portal changes payment details only; quantity, price and overdue invoice payment are separate actions. It requires an app-owned managed subscription with a dedicated customer. Reuse the operation key after a lost response and use a new key for a deliberately new session after expiry.
 
-For payment history, start with an empty cursor and zero snapshot, then retain the
-returned snapshot and pass `next_cursor` until `has_more` is false. Amounts are integer
-minor units and timestamps are UTC RFC3339. The history includes captured cash payments,
-tax-exclusive eligible amounts, successful refunds, and dispute principal withdrawals
-and reinstatements (`reverses_id` links a reinstatement to its withdrawal).
+For payment history, keep the returned `snapshot` across `next_cursor` pages until `has_more` is false. Amounts are integer minor units and timestamps are UTC RFC3339. History covers captured cash, tax-exclusive eligible amounts, refunds, and dispute principal withdrawals/reinstatements (`reverses_id` identifies the reversed withdrawal).
 
-Quarantine items with `reconciliation_reason`; commit a scan only after every page has
-been verified. The snapshot is an event cutoff, not an immutable provider snapshot.
-Rescan from the first page regularly and apply facts idempotently by payment/adjustment
-ID. Zero-cash invoices are omitted from items while still advancing pagination. Currency
-conversion and customer credits require explicit reconciliation; processing and dispute
-fees are excluded from eligible principal. The SDK returns these facts without applying
-credits or reconciling them automatically.
-
-### Setup webhook acknowledgement
-
-The dashboard sends a signed `setup.webhook_test` event with `source: "onboarding"`, `data.message`, and setup metadata. Parse it with the webhook handler, verify its signature using the application webhook secret, then acknowledge it with HTTP 200, 202, or 204. Setup events have onboarding data and do not convert to payment transactions. Event classification alone does not authenticate a request. Invalid signatures must be rejected; no payment lookup or fulfillment is needed for a valid setup test.
-
-The signature uses HMAC-SHA256 over the JSON envelope excluding `security`, preserving envelope field order and Go JSON map ordering and escaping.
+Quarantine items with `reconciliation_reason` and verify every page before committing a scan. The snapshot is an event cutoff, not an immutable provider snapshot: rescan from the first page to discover later adjustments, then apply facts idempotently by payment/adjustment ID. Zero-cash invoices advance pagination without an item. Processing/dispute fees are excluded from eligible principal; currency conversion and customer credits need explicit reconciliation.
 
 ## Refunds, merchant payouts and checkout cancellation
 
@@ -261,11 +90,13 @@ out of the requested amount: requesting 100 with a fee of 2 reserves 100 and pay
 ```ruby
 refund = tinker.transactions.refund(payment_id,
   Tinker::Model::Dto::RefundRequest.new(reason: 'requested_by_customer', amount: 25), 'refund-order-42')
-methods = tinker.payouts.methods
-quote = tinker.payouts.quote(payout_method_id: method_id, amount: 100, currency: 'KES')
+destination = tinker.payouts.methods.find { |method| method['is_verified'] && method['status'] == 'active' }
+raise 'Configure an active, verified payout method' unless destination
+method_id = destination['id']
+quote = tinker.payouts.quote(payout_method_id: method_id, amount: 100, currency: destination['currency'])
 payout = tinker.payouts.request_payout(
   Tinker::Model::Dto::PayoutRequest.new(payout_method_id: method_id, amount: 100,
-    currency: 'KES', expected_fee_amount: quote['fee_amount']), 'withdrawal-42')
+    currency: destination['currency'], expected_fee_amount: quote['fee_amount']), 'withdrawal-42')
 status = tinker.payouts.get(payout.withdrawal.id)
 cancellation = tinker.transactions.cancel_checkout(unpaid_payment_id,
   Tinker::Model::Dto::CancellationRequest.new(reason: 'Order cancelled'), 'cancel-order-42')
@@ -285,14 +116,43 @@ for unsupported cancellation (422) or updated quote for a fee conflict (409).
 Subscription cancellation is a separate operation. Existing administrative queues
 handle manual refunds and withdrawals.
 
-Lifecycle tests use `spec/fixtures/merchant-lifecycle.json`, copied from the
-OpenAPI repository's canonical fixture. Override with `TINKER_LIFECYCLE_FIXTURES`
-for coordinated contract changes and refresh the checked-in copy in each release.
-
 Cancellation history returns the newest 100 requests and `has_more`; use the
-single-request lookup to track a known older request. Signed
-`checkout.cancellation.updated.v1`, `refund.updated.v1`, and
-`withdrawal.updated.v1` events contain the corresponding resource in
-`data.resource`. Their parsed data is a cancellation, refund, or payout;
-transaction conversion returns null. Verify signatures before acting on any
-event and deduplicate delivery by event ID.
+single-request lookup to track a known older request. A cancellation with
+`payment_conflict` means later successful collection conflicts with cancellation
+evidence; investigate the successful payment and use a refund if needed.
+
+## Webhooks
+
+```ruby
+event = tinker.webhooks.handle(raw_body)
+raise 'Invalid webhook signature' unless tinker.webhooks.verify_signature(event, webhook_secret)
+transaction = event.to_transaction # nil for setup/lifecycle events
+```
+
+Verify the signature before consuming fields or converting the event to a transaction; reuse the parsed event rather than reading the request body twice. Deduplicate by event ID. The SDK verifies HMAC-SHA256 over the envelope excluding `security`, using the server's field order, map ordering and escaping.
+
+After verification, acknowledge `setup.webhook_test` (`source: onboarding`) with HTTP 200, 202 or 204; it needs no payment lookup or fulfillment. The signed lifecycle events `refund.updated.v1`, `withdrawal.updated.v1` and `checkout.cancellation.updated.v1` carry `data.resource` with `source: payment`. Their typed resources never convert into payment transactions. Poll request IDs if delivery is delayed.
+
+## Errors and response metadata
+
+API errors retain `http_status`, `error_code`, `provider_code`, `request_id`, `retry_after`, `outcome` and the full envelope in `details`. Request IDs prefer the response body over `X-Request-ID`; `Retry-After` remains its original string. Non-JSON HTTP failures retain status/headers and an uncertain outcome. Only an explicit `not_applied` outcome confirms no mutation. Use `manager.last_meta` or `tinker.last_auth_meta` for response metadata.
+
+```ruby
+begin
+  tinker.transactions.query(Tinker::Model::Dto::QueryPaymentRequestDto.new(
+    payment_reference: 'TXN-abc123xyz', gateway: Tinker::Enum::Gateway::MPESA
+  ))
+rescue Tinker::Exception::ApiException => error
+  warn "#{error.error_code}: #{error.message}"
+end
+```
+
+## Development
+
+```sh
+bundle install
+bundle exec rubocop
+bundle exec rake spec
+```
+
+MIT License.

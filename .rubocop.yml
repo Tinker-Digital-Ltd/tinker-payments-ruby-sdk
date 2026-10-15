@@ -6,7 +6,6 @@ AllCops:
     - 'spec/spec_helper.rb'
     - 'bin/**/*'
     - 'tmp/**/*'
-    - '*.gemspec'
 
 Style/Documentation:
   Enabled: false
