@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'uri'
 
 module Tinker
   module Api
@@ -16,7 +17,7 @@ module Tinker
 
       protected
 
-      def request(method, endpoint, data = {})
+      def request(method, endpoint, data = {}, request_headers = {})
         base_url = @config.base_url.chomp('/')
         endpoint = endpoint[1..] if endpoint.start_with?('/')
         url = "#{base_url}/#{endpoint}"
@@ -27,6 +28,8 @@ module Tinker
           'Accept' => 'application/json',
           'Content-Type' => 'application/json'
         }
+
+        headers.merge!(request_headers)
 
         body = data.nil? || data.empty? ? nil : JSON.generate(data)
         response = send_request(method, url, headers, body)
@@ -39,6 +42,25 @@ module Tinker
       rescue StandardError => e
         raise Exception::NetworkException.new("Failed to communicate with Tinker API: #{e.message}",
                                               Exception::ExceptionCode::NETWORK_ERROR, e)
+      end
+
+      def operation_headers(key)
+        key = key.strip
+        unless key.bytesize.between?(1, 255) && !key.match?(/[\r\n]/)
+          raise Exception::InvalidPayloadException, 'Idempotency key must contain 1 to 255 bytes without line breaks'
+        end
+
+        { 'Idempotency-Key' => key }
+      end
+
+      def resource_id(id)
+        raise Exception::InvalidPayloadException, 'Resource ID is required' if id.strip.empty?
+
+        URI.encode_www_form_component(id).gsub('+', '%20')
+      end
+
+      def payment_path(id)
+        "merchant/payment/#{resource_id(id)}"
       end
 
       def send_request(method, url, headers, body)

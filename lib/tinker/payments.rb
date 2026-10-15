@@ -8,6 +8,7 @@ require_relative 'auth/authentication_manager'
 require_relative 'api/base_manager'
 require_relative 'api/transaction_manager'
 require_relative 'api/subscription_manager'
+require_relative 'api/payout_manager'
 require_relative 'webhook/webhook_handler'
 
 module Tinker
@@ -33,6 +34,10 @@ module Tinker
         http_client: @http_client,
         auth_manager: @auth_manager
       )
+    end
+
+    def payouts
+      @payouts ||= Api::PayoutManager.new(config: @config, http_client: @http_client, auth_manager: @auth_manager)
     end
 
     def webhooks

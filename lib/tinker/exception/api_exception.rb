@@ -7,10 +7,11 @@ module Tinker
         super(message)
         @code = code
         @http_status = http_status
+        @details = details
         extract_metadata(details, headers)
       end
 
-      attr_reader :code, :http_status, :error_code, :provider_code, :request_id, :retry_after, :outcome
+      attr_reader :code, :http_status, :error_code, :provider_code, :request_id, :retry_after, :outcome, :details
 
       private
 
