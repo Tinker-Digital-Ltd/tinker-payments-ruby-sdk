@@ -15,6 +15,7 @@ Gem::Specification.new do |spec|
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/tinker/payments-ruby-sdk'
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
   spec.files = Dir.chdir(__dir__) do
     `git ls-files -z`.split("\x0").reject do |f|
@@ -27,7 +28,6 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 3.0.0'
 
-  spec.add_dependency 'json', '~> 2.0'
   spec.add_dependency 'base64', '~> 0.1'
+  spec.add_dependency 'json', '~> 2.0'
 end
-
