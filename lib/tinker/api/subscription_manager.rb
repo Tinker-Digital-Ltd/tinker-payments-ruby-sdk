@@ -61,6 +61,14 @@ module Tinker
         request('POST', "#{billing_resource_path(id)}/cancel", cancel: cancel, idempotency_key: key)
       end
 
+      def set_trial_end(id, end_time, key)
+        request('POST', "#{billing_resource_path(id)}/trial-end", trial_end: end_time.to_i, idempotency_key: key)
+      end
+
+      def end_trial(id, key)
+        request('POST', "#{billing_resource_path(id)}/end-trial", idempotency_key: key)
+      end
+
       def billing_operation(key)
         request('GET', "merchant/billing/operations/#{escape_path(key)}")
       end
