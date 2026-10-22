@@ -44,6 +44,7 @@ Checkout uses exact integer minor-unit prices (`15000` = EUR 150.00), a `month` 
 | Method | Purpose |
 |---|---|
 | `checkout` | Create an exact-price recurring checkout |
+| `expire_checkout` | Expire an abandoned, unpaid checkout |
 | `billing_resource` | Read a managed billing resource |
 | `change_quantity` | Change the current quantity |
 | `schedule_quantity` | Schedule a quantity change |
@@ -72,6 +73,20 @@ operation = billing.billing_operation('quantity-123')
 
 Pass Integer values for minor-unit amounts, quantities and snapshots; do not convert
 through floating-point prices. `ManagedCheckout` exposes `to_hash`.
+
+### Expiring an abandoned checkout
+
+An abandoned checkout link can still be completed later and create a second subscription. Expire it to close the link.
+
+```ruby
+billing.expire_checkout('checkout-id', 'expire-123')
+```
+
+- `open` checkout: becomes `expired` (`managed_state.status` is `canceled`) and the session is returned.
+- Already `expired`: the session is returned unchanged, so retrying is safe.
+- `complete`, including completion while the call is in flight: HTTP 409 `CHECKOUT_COMPLETED` with `outcome: not_applied`. Read the checkout with `billing_resource` and use its subscription.
+
+A non-checkout ID (`sub_...`) returns 400 `INVALID_ID`. An expired checkout sends no `subscription.cancelled` webhook.
 
 ### Trials with a required payment method
 
