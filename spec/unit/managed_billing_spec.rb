@@ -35,6 +35,8 @@ RSpec.describe Tinker::Api::SubscriptionManager do
     manager.schedule_quantity('sub/a b', 2, 'schedule-key')
     manager.clear_scheduled_quantity('sub/a b', 'clear-key')
     manager.set_cancel_at_renewal('sub/a b', false, 'resume-key')
+    manager.set_trial_end('sub/a b', Time.at(1_900_000_000), 'trial-key')
+    manager.end_trial('sub/a b', 'end-key')
     manager.billing_operation('key/a b')
     manager.payment_method_portal('sub/a b', 'https://example.com/return', 'portal-key')
     page = manager.billing_payment_history('sub/a b', 'in/a &b', 123)
@@ -47,6 +49,8 @@ RSpec.describe Tinker::Api::SubscriptionManager do
                                                                                ['POST', "#{base}/schedule", { 'quantity' => 2, 'idempotency_key' => 'schedule-key' }],
                                                                                ['POST', "#{base}/unschedule", { 'idempotency_key' => 'clear-key' }],
                                                                                ['POST', "#{base}/cancel", { 'cancel' => false, 'idempotency_key' => 'resume-key' }],
+                                                                               ['POST', "#{base}/trial-end", { 'trial_end' => 1_900_000_000, 'idempotency_key' => 'trial-key' }],
+                                                                               ['POST', "#{base}/end-trial", { 'idempotency_key' => 'end-key' }],
                                                                                ['GET', 'merchant/billing/operations/key%2Fa%20b', nil],
                                                                                ['POST', "#{base}/payment-method", { 'return_url' => 'https://example.com/return', 'idempotency_key' => 'portal-key' }],
                                                                                ['GET', "#{base}/payment-history?starting_after=in%2Fa+%26b&snapshot=123", nil],
@@ -63,6 +67,14 @@ RSpec.describe Tinker::Api::SubscriptionManager do
     manager.checkout(Tinker::Model::Dto::ManagedCheckout.new(**args, trial_days: 0))
     manager.checkout(Tinker::Model::Dto::ManagedCheckout.new(**args, trial_days: 14))
     expect(calls.map { |_, _, body, _| body.key?('trial_days') ? body['trial_days'] : nil }).to eq([nil, nil, 14])
+  end
+
+  it 'sends trial_end only when set' do
+    args = { external_customer_id: 'workspace', email: 'buyer@example.com', name: 'Buyer', currency: 'EUR',
+             unit_amount: 15_000, quantity: 3, interval: 'year', return_url: 'https://example.com/return', idempotency_key: 'checkout-key' }
+    manager.checkout(Tinker::Model::Dto::ManagedCheckout.new(**args))
+    manager.checkout(Tinker::Model::Dto::ManagedCheckout.new(**args, trial_end: Time.at(1_900_000_000)))
+    expect(calls.map { |_, _, body, _| body['trial_end'] }).to eq([nil, 1_900_000_000])
   end
 
   [429, 200, 502].each do |status|
