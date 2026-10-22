@@ -41,6 +41,10 @@ module Tinker
         request('POST', 'merchant/billing/checkout', request.to_hash)
       end
 
+      def expire_checkout(id, key)
+        request('POST', "merchant/billing/checkout/#{escape_path(id)}/expire", idempotency_key: key)
+      end
+
       def billing_resource(id)
         request('GET', billing_resource_path(id))
       end

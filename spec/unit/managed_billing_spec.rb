@@ -30,6 +30,7 @@ RSpec.describe Tinker::Api::SubscriptionManager do
       unit_amount: 15_000, quantity: 3, interval: 'year', return_url: 'https://example.com/return', idempotency_key: 'checkout-key'
     )
     manager.checkout(checkout)
+    manager.expire_checkout('cs/a b', 'expire-key')
     manager.billing_resource('sub/a b')
     manager.change_quantity('sub/a b', 4, 'change-key')
     manager.schedule_quantity('sub/a b', 2, 'schedule-key')
@@ -44,6 +45,7 @@ RSpec.describe Tinker::Api::SubscriptionManager do
     base = 'merchant/billing/resources/sub%2Fa%20b'
     expect(calls.map { |method, path, body, _| [method, path, body] }).to eq([
                                                                                ['POST', 'merchant/billing/checkout', JSON.parse(checkout.to_hash.to_json)],
+                                                                               ['POST', 'merchant/billing/checkout/cs%2Fa%20b/expire', { 'idempotency_key' => 'expire-key' }],
                                                                                ['GET', base, nil],
                                                                                ['POST', "#{base}/quantity", { 'quantity' => 4, 'idempotency_key' => 'change-key' }],
                                                                                ['POST', "#{base}/schedule", { 'quantity' => 2, 'idempotency_key' => 'schedule-key' }],
