@@ -6,12 +6,13 @@ module Tinker
       # Exact integer minor-unit prices for managed recurring billing.
       class ManagedCheckout
         def initialize(external_customer_id:, email:, name:, currency:, unit_amount:, quantity:,
-                       interval:, return_url:, idempotency_key:)
+                       interval:, return_url:, idempotency_key:, trial_days: 0)
           @payload = {
             external_customer_id: external_customer_id, email: email, name: name, currency: currency,
             unit_amount: unit_amount, quantity: quantity, interval: interval, return_url: return_url,
             idempotency_key: idempotency_key
           }
+          @payload[:trial_days] = trial_days if trial_days.positive?
         end
 
         def to_hash

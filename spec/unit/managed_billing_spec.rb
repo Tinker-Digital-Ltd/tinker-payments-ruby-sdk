@@ -56,6 +56,15 @@ RSpec.describe Tinker::Api::SubscriptionManager do
     expect(page).to eq('snapshot' => 123, 'next_cursor' => 'in_next', 'has_more' => true)
   end
 
+  it 'sends trial_days only when positive' do
+    args = { external_customer_id: 'workspace', email: 'buyer@example.com', name: 'Buyer', currency: 'EUR',
+             unit_amount: 15_000, quantity: 3, interval: 'year', return_url: 'https://example.com/return', idempotency_key: 'checkout-key' }
+    manager.checkout(Tinker::Model::Dto::ManagedCheckout.new(**args))
+    manager.checkout(Tinker::Model::Dto::ManagedCheckout.new(**args, trial_days: 0))
+    manager.checkout(Tinker::Model::Dto::ManagedCheckout.new(**args, trial_days: 14))
+    expect(calls.map { |_, _, body, _| body.key?('trial_days') ? body['trial_days'] : nil }).to eq([nil, nil, 14])
+  end
+
   [429, 200, 502].each do |status|
     context "with response status #{status}" do
       let(:response) do
