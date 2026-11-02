@@ -5,10 +5,11 @@ module Tinker
     module Dto
       class InitiatePaymentRequestDto
         attr_reader :amount, :currency, :gateway, :merchant_reference, :return_url,
-                    :customer_phone, :customer_email, :transaction_desc, :metadata
+                    :customer_phone, :customer_email, :transaction_desc, :metadata, :payment_method
 
         def initialize(amount:, currency:, gateway:, merchant_reference:, return_url:,
-                       customer_phone: nil, customer_email: nil, transaction_desc: nil, metadata: nil)
+                       customer_phone: nil, customer_email: nil, transaction_desc: nil, metadata: nil,
+                       payment_method: nil)
           @amount = amount
           @currency = currency
           @gateway = gateway
@@ -18,6 +19,7 @@ module Tinker
           @customer_email = customer_email
           @transaction_desc = transaction_desc
           @metadata = metadata
+          @payment_method = payment_method
         end
 
         def to_hash
@@ -35,6 +37,7 @@ module Tinker
           payload[:customerEmail] = @customer_email if @customer_email
           payload[:transactionDesc] = @transaction_desc if @transaction_desc
           payload[:metadata] = @metadata if @metadata
+          payload[:paymentMethod] = @payment_method if @payment_method
 
           payload
         end

@@ -35,6 +35,37 @@ result = tinker.transactions.query(Tinker::Model::Dto::QueryPaymentRequestDto.ne
 
 Payments use currency units. Mpesa requires `customer_phone`; `return_url` is the browser destination, while webhooks are configured separately in the dashboard. Hosted providers may return `payment.initiation_data&.authorization_url` for a redirect.
 
+### Apple Pay / Google Pay
+
+```ruby
+request = Tinker::Model::Dto::InitiatePaymentRequestDto.new(
+  amount: 100, currency: 'USD', gateway: Tinker::Enum::Gateway::STRIPE,
+  merchant_reference: 'ORDER-12345',
+  return_url: 'https://merchant.example/payment/return',
+  payment_method: 'apple_pay' # or 'google_pay'
+)
+data = tinker.transactions.initiate(request).initiation_data
+# return data.client_secret and data.publishable_key to the browser as JSON
+```
+
+```html
+<div id="wallet"></div>
+<script src="https://js.stripe.com/v3/"></script>
+<script type="module">
+  const { clientSecret, publishableKey } = await fetch("/checkout/wallet", { method: "POST" }).then((r) => r.json());
+  const stripe = Stripe(publishableKey);
+  const elements = stripe.elements({ clientSecret });
+  const wallet = elements.create("expressCheckout", { paymentMethods: { applePay: "always", googlePay: "always" } });
+  wallet.mount("#wallet");
+  wallet.on("confirm", async () => {
+    const { error } = await stripe.confirmPayment({ elements, clientSecret, redirect: "if_required", confirmParams: { return_url: location.href } });
+    if (error) console.error(error.message);
+  });
+</script>
+```
+
+The result arrives through `payment.*` webhooks. Apple Pay on the web needs the checkout domain registered with Stripe.
+
 Plan-based subscriptions use `tinker.subscriptions.create_plan`, `list_plans`, `create`, `list` and `cancel` with the request DTOs in `Tinker::Model::Dto`.
 
 ## Managed recurring billing
