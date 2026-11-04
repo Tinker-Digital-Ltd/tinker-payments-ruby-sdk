@@ -33,6 +33,8 @@ result = tinker.transactions.query(Tinker::Model::Dto::QueryPaymentRequestDto.ne
 ))
 ```
 
+Any registered provider id works as `gateway:`, so new providers need no SDK release; `Tinker::Enum::Gateway` only lists common ones (`PESAPAL` included). List providers and their features with `tinker.transactions.capabilities(currency: 'KES', country: 'KE')` (both optional). Payment statuses are strings: `completed` becomes `success`, and unknown future statuses are kept as sent (`reversed` is `PaymentStatus::REVERSED`).
+
 Payments use currency units. Mpesa requires `customer_phone`; `return_url` is the browser destination, while webhooks are configured separately in the dashboard. Hosted providers may return `payment.initiation_data&.authorization_url` for a redirect.
 
 ### Apple Pay / Google Pay
@@ -212,6 +214,8 @@ After verification, acknowledge `setup.webhook_test` (`source: onboarding`) with
 ## Errors and response metadata
 
 API errors retain `http_status`, `error_code`, `provider_code`, `request_id`, `retry_after`, `outcome` and the full envelope in `details`. Request IDs prefer the response body over `X-Request-ID`; `Retry-After` remains its original string. Non-JSON HTTP failures retain status/headers and an uncertain outcome. Only an explicit `not_applied` outcome confirms no mutation. Use `manager.last_meta` or `tinker.last_auth_meta` for response metadata.
+
+An unsupported feature raises `Tinker::Exception::FeatureNotSupportedException` (an `ApiException`) with `gateway`, `feature` and `alternatives`; it replaces the former `CHECKOUT_CANCELLATION_UNSUPPORTED` code.
 
 ```ruby
 begin
