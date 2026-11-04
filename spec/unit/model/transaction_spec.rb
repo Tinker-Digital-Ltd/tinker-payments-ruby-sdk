@@ -20,6 +20,20 @@ RSpec.describe Tinker::Model::Transaction do
       end
     end
 
+    context 'with wallet data' do
+      it 'parses client secret and publishable key' do
+        transaction = Tinker::Model::Transaction.new(
+          'paymentReference' => 'pi_123',
+          'status' => 'pending',
+          'clientSecret' => 'pi_123_secret_abc',
+          'publishableKey' => 'pk_test_abc'
+        )
+
+        expect(transaction.initiation_data.client_secret).to eq('pi_123_secret_abc')
+        expect(transaction.initiation_data.publishable_key).to eq('pk_test_abc')
+      end
+    end
+
     context 'with query/callback data' do
       it 'creates transaction with query and callback data' do
         data = {
