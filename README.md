@@ -125,7 +125,7 @@ A non-checkout ID (`sub_...`) returns 400 `INVALID_ID`. An expired checkout send
 
 ### Trials with a required payment method
 
-Set `trial_days` (1 to 730) to collect a card at checkout and charge first when the trial ends. The SDK sends `trial_days` only when it is above 0, so checkouts without a trial keep working against servers released before trial support. A gateway without trial support returns HTTP 422 `TRIAL_UNSUPPORTED` with `outcome: not_applied`. Limiting a customer to one trial is the app's responsibility. Alternatively set `trial_end` to an exact end 48 hours to 730 days ahead; it cannot be combined with `trial_days` (HTTP 400), and the SDK sends it only when set.
+Set `trial_days` (1 to 730) to collect a card at checkout and charge first when the trial ends. The SDK sends `trial_days` only when it is above 0, so checkouts without a trial keep working against servers released before trial support. A gateway without trial support returns HTTP 422 `FEATURE_NOT_SUPPORTED` with `outcome: not_applied`. Limiting a customer to one trial is the app's responsibility. Alternatively set `trial_end` to an exact end 48 hours to 730 days ahead; it cannot be combined with `trial_days` (HTTP 400), and the SDK sends it only when set.
 
 ```ruby
 billing.checkout(Tinker::Model::Dto::ManagedCheckout.new(
