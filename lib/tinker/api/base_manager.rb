@@ -88,8 +88,11 @@ module Tinker
       end
 
       def api_error(response, result)
-        Exception::ApiException.new(extract_error_message(result), http_status: response.status_code,
-                                                                   details: result, headers: response.headers || {})
+        error = result.is_a?(Hash) && result['error'].is_a?(Hash) ? result['error'] : {}
+        feature = Exception::FeatureNotSupportedException
+        klass = error['code'] == feature::CODE ? feature : Exception::ApiException
+        klass.new(extract_error_message(result), http_status: response.status_code,
+                                                 details: result, headers: response.headers || {})
       end
 
       def extract_error_message(result)

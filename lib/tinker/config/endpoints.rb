@@ -9,6 +9,7 @@ module Tinker
       AUTH_TOKEN_PATH = '/auth/token'
       PAYMENT_INITIATE_PATH = '/merchant/payment/initiate'
       PAYMENT_QUERY_PATH = '/merchant/payment/query'
+      PAYMENT_CAPABILITIES_PATH = '/merchant/payment/capabilities'
       SUBSCRIPTION_BASE_PATH = '/merchant/subscriptions'
       SUBSCRIPTION_PLANS_PATH = '/merchant/subscriptions/plans'
     end

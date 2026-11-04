@@ -6,6 +6,7 @@ module Tinker
       MPESA = 'mpesa'
       PAYSTACK = 'paystack'
       STRIPE = 'stripe'
+      PESAPAL = 'pesapal'
     end
   end
 end

@@ -11,6 +11,10 @@ RSpec.describe Tinker::Enum::Gateway do
     expect(Tinker::Enum::Gateway::PAYSTACK).to eq('paystack')
   end
 
+  it 'defines PESAPAL constant' do
+    expect(Tinker::Enum::Gateway::PESAPAL).to eq('pesapal')
+  end
+
   it 'defines STRIPE constant' do
     expect(Tinker::Enum::Gateway::STRIPE).to eq('stripe')
   end
