@@ -64,6 +64,56 @@ RSpec.describe 'Merchant lifecycle operations' do
     end
   end
 
+  def gateway_call(operation, body)
+    case operation
+    when 'listPaymentCapabilities' then -> { transactions.capabilities(currency: 'KES', country: 'KE') }
+    when 'initiatePayment'
+      request = Tinker::Model::Dto::InitiatePaymentRequestDto.new(
+        amount: body['amount'], currency: body['currency'], gateway: body['gateway'],
+        merchant_reference: body['merchantReference'], return_url: body['returnUrl'],
+        customer_phone: body['customerPhone'], payment_method: body['paymentMethod']
+      )
+      -> { transactions.initiate(request) }
+    when 'queryPayment'
+      request = Tinker::Model::Dto::QueryPaymentRequestDto.new(payment_reference: body['reference'],
+                                                               gateway: body['gateway'])
+      -> { transactions.query(request) }
+    end
+  end
+
+  it 'handles every gateway fixture case' do
+    fixtures['gateway']['cases'].each do |fixture|
+      response = Tinker::Http::HttpClient::Response.new(fixture['status'], fixture['response'].to_json, {})
+      sent = nil
+      allow(http).to receive(:get) do |url, **|
+        sent = ['GET', url, nil]
+        response
+      end
+      allow(http).to receive(:post) do |url, body:, **|
+        sent = ['POST', url, JSON.parse(body)]
+        response
+      end
+      body = fixture['body']
+      call = gateway_call(fixture['operation'], body)
+      if fixture['status'] >= 400
+        expect { call.call }.to raise_error(Tinker::Exception::FeatureNotSupportedException) do |error|
+          expect(error).to be_a(Tinker::Exception::ApiException)
+          expect(error.gateway).to eq('mpesa')
+          expect(error.feature).to eq('wallet')
+          expect(error.alternatives).to eq(['stripe'])
+          expect(error.error_code).to eq('FEATURE_NOT_SUPPORTED')
+          expect(error.http_status).to eq(422)
+        end
+      else
+        result = call.call
+        expect(URI(sent[1]).path).to end_with(URI("x://h/#{fixture['path']}").path)
+        expect(sent[2]).to eq(body)
+        expect(result).to eq(fixture['response']['data']) if fixture['operation'] == 'listPaymentCapabilities'
+        expect(result.status).to eq('reversed') if fixture['operation'] == 'queryPayment'
+      end
+    end
+  end
+
   it 'retains a recorded rejected cancellation in structured error details without retrying' do
     details = { 'request_id' => 'cancel-1', 'status' => 'rejected' }
     payload = { success: false, error: { code: 'CHECKOUT_CANCELLATION_UNSUPPORTED', message: 'Unsupported', details: details } }
@@ -93,7 +143,7 @@ RSpec.describe 'Merchant lifecycle operations' do
   end
 
   it 'keeps the vendored fixture identical to the canonical contract when available' do
-    canonical = File.expand_path('../../../tinker-payments-openapi/fixtures/merchant-lifecycle.json', __dir__)
+    canonical = File.expand_path('../../../../tinker-payments-backend/openapi/fixtures/merchant-lifecycle.json', __dir__)
     expect(fixtures).to eq(JSON.parse(File.read(canonical))) if File.file?(canonical)
     expect(fixtures['contract_version']).to eq(1)
   end

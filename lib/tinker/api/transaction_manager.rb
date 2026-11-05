@@ -17,6 +17,12 @@ module Tinker
         Model::Transaction.new(response)
       end
 
+      def capabilities(currency: nil, country: nil)
+        query = URI.encode_www_form({ currency: currency, country: country }.compact)
+        path = Config::Endpoints::PAYMENT_CAPABILITIES_PATH
+        request('GET', query.empty? ? path : "#{path}?#{query}")
+      end
+
       def refund(payment_id, payload, key)
         result = request('POST', "#{payment_path(payment_id)}/refund", payload.to_hash, operation_headers(key))
         Model::RefundResult.new(result)

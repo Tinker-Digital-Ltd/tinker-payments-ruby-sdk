@@ -8,12 +8,7 @@ module Tinker
 
         def initialize(data)
           @id = data['id']
-          status_value = data['status'] || 'pending'
-          @status = begin
-            Tinker::Enum::PaymentStatus.const_get(status_value.upcase)
-          rescue NameError
-            Tinker::Enum::PaymentStatus::PENDING
-          end
+          @status = Tinker::Enum::PaymentStatus.parse(data['status'])
           @reference = data['reference']
           @amount = data['amount'].to_f
           @currency = data['currency']

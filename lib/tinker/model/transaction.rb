@@ -20,7 +20,7 @@ module Tinker
           @initiation_data = nil
           @query_data = nil
           @callback_data = nil
-          @status = status_from(data['status'] || 'pending')
+          @status = Enum::PaymentStatus.parse(data['status'])
         end
       end
 
@@ -38,14 +38,6 @@ module Tinker
 
       def failed?
         @status == Enum::PaymentStatus::FAILED
-      end
-
-      private
-
-      def status_from(value)
-        Enum::PaymentStatus.const_get(value.upcase)
-      rescue NameError
-        Enum::PaymentStatus::PENDING
       end
     end
   end

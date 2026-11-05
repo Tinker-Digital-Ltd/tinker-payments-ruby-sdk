@@ -8,12 +8,7 @@ module Tinker
 
         def initialize(data)
           @payment_reference = data['paymentReference'] || data['payment_reference']
-          status_value = data['status'] || 'pending'
-          @status = begin
-            Tinker::Enum::PaymentStatus.const_get(status_value.upcase)
-          rescue NameError
-            Tinker::Enum::PaymentStatus::PENDING
-          end
+          @status = Tinker::Enum::PaymentStatus.parse(data['status'])
           @authorization_url = data['authorizationUrl'] || data['authorization_url']
           @client_secret = data['clientSecret'] || data['client_secret']
           @publishable_key = data['publishableKey'] || data['publishable_key']
