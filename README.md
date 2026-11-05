@@ -44,7 +44,7 @@ request = Tinker::Model::Dto::InitiatePaymentRequestDto.new(
   amount: 100, currency: 'USD', gateway: Tinker::Enum::Gateway::STRIPE,
   merchant_reference: 'ORDER-12345',
   return_url: 'https://merchant.example/payment/return',
-  payment_method: 'apple_pay' # or 'google_pay'
+  payment_method: 'apple_pay' # or 'google_pay'; 'bnpl' is Klarna on Stripe Checkout
 )
 data = tinker.transactions.initiate(request).initiation_data
 # return data.client_secret and data.publishable_key to the browser as JSON
