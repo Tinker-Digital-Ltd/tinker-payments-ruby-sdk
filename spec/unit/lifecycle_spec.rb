@@ -143,7 +143,7 @@ RSpec.describe 'Merchant lifecycle operations' do
   end
 
   it 'keeps the vendored fixture identical to the canonical contract when available' do
-    canonical = File.expand_path('../../../tinker-payments-openapi/fixtures/merchant-lifecycle.json', __dir__)
+    canonical = File.expand_path('../../../../tinker-payments-backend/openapi/fixtures/merchant-lifecycle.json', __dir__)
     expect(fixtures).to eq(JSON.parse(File.read(canonical))) if File.file?(canonical)
     expect(fixtures['contract_version']).to eq(1)
   end
