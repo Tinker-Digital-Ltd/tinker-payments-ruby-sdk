@@ -74,6 +74,59 @@ The result arrives through `payment.*` webhooks. Apple Pay and Google Pay on the
 
 Plan-based subscriptions use `tinker.subscriptions.create_plan`, `list_plans`, `create`, `list` and `cancel` with the request DTOs in `Tinker::Model::Dto`.
 
+## Provider examples
+
+Every provider takes the same request. Keys and values are fake.
+
+```ruby
+dto = Tinker::Model::Dto
+tx = tinker.transactions
+return_url = 'https://shop.example/return'
+
+# Redirect (Paystack, Pesapal, PayPal, Flutterwave, DPO, Interswitch, Adyen, Plaid, hosted Stripe):
+# send the customer to payment.initiation_data&.authorization_url.
+payment = tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 2500, currency: 'NGN', gateway: 'paystack', merchant_reference: 'ORDER-1',
+  return_url: return_url, customer_email: 'jane@example.com'
+))
+
+# Phone approval (M-Pesa, MTN MoMo): no authorization_url. The customer approves on their phone
+# and the result arrives as a payment.completed or payment.failed webhook.
+tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 100, currency: 'KES', gateway: 'mpesa', merchant_reference: 'ORDER-2',
+  return_url: return_url, customer_phone: '+254712345678'
+))
+
+# Klarna (payment_method 'bnpl' on Stripe or Adyen) is captured at once. Adyen also needs country
+# (AT DK FI DE NO SE CH NL GB US) and that country's currency.
+tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 49.9, currency: 'EUR', gateway: 'adyen', merchant_reference: 'ORDER-3',
+  return_url: return_url, customer_email: 'jane@example.com', country: 'DE', payment_method: 'bnpl'
+))
+
+# Plaid (plaid_transfer, plaid_payments): customer_name is required.
+# Payment Initiation INITIATED counts as paid.
+tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 40, currency: 'GBP', gateway: 'plaid_payments', merchant_reference: 'ORDER-4',
+  return_url: return_url, customer_email: 'jane@example.com', customer_name: 'Jane Doe', country: 'GB'
+))
+
+# Ask first, then handle a refusal.
+tx.capabilities(currency: 'KES', country: 'KE')['providers'].each do |p|
+  puts "#{p['gateway']} #{p['capabilities']['pay_mobile_money']}"
+end
+begin
+  tx.initiate(dto::InitiatePaymentRequestDto.new(
+    amount: 100, currency: 'KES', gateway: 'mpesa', merchant_reference: 'ORDER-5',
+    return_url: return_url, customer_phone: '+254712345678', payment_method: 'apple_pay'
+  ))
+rescue Tinker::Exception::FeatureNotSupportedException => e
+  puts "#{e.gateway} #{e.feature} #{e.alternatives.join(',')}" # retry on one of the alternatives
+end
+```
+
+Pay-as-you-go apps use Tinker's provider credentials; your own need a paid plan (HTTP 403 `PAID_PLAN_REQUIRED`).
+
 ## Managed recurring billing
 
 Checkout uses exact integer minor-unit prices (`15000` = EUR 150.00), a `month` or `year` interval, and a quantity. The SDK does not convert prices or apply discounts. Responses are unwrapped data maps/objects.
