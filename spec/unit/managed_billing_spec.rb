@@ -123,6 +123,13 @@ RSpec.describe Tinker::Api::SubscriptionManager do
     end
   end
 
+  it 'sends plan features_json only when set' do
+    dto = Tinker::Model::Dto::CreateSubscriptionPlanRequestDto
+    expect(dto.new(name: 'Pro', amount: 1, currency: 'EUR', intervals: ['monthly']).to_hash).not_to have_key(:features_json)
+    plan = dto.new(name: 'Pro', amount: 1, currency: 'EUR', intervals: ['monthly'], features_json: { seats: 5 })
+    expect(plan.to_hash[:features_json]).to eq(seats: 5)
+  end
+
   it 'keeps legacy API exception arguments' do
     error = Tinker::Exception::ApiException.new('legacy', 123)
     expect(error.code).to eq(123)
