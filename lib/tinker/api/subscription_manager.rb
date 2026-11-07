@@ -15,6 +15,20 @@ module Tinker
         wrapped['value'].is_a?(Array) ? wrapped['value'] : []
       end
 
+      def update_plan(plan_id, request)
+        request('PUT', plan_path(plan_id), request.to_hash)
+      end
+
+      def delete_plan(plan_id)
+        request('DELETE', plan_path(plan_id), nil)
+      end
+
+      def list_invoices(subscription_id: nil, page: nil, page_size: nil)
+        query = URI.encode_www_form({ subscription_id: subscription_id, page: page, page_size: page_size }.compact)
+        path = Config::Endpoints::SUBSCRIPTION_INVOICES_PATH
+        request('GET', query.empty? ? path : "#{path}?#{query}", nil)
+      end
+
       def create(request)
         payload = request.to_hash
         request('POST', Config::Endpoints::SUBSCRIPTION_BASE_PATH, payload)
@@ -91,6 +105,10 @@ module Tinker
       end
 
       private
+
+      def plan_path(id)
+        "#{Config::Endpoints::SUBSCRIPTION_PLANS_PATH}/#{escape_path(id)}"
+      end
 
       def billing_resource_path(id)
         "merchant/billing/resources/#{escape_path(id)}"

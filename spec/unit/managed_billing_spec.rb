@@ -20,6 +20,30 @@ RSpec.describe Tinker::Api::SubscriptionManager do
     end
   end
 
+  it 'updates and deletes plans and lists invoices on the spec routes' do
+    allow(http).to receive(:put) do |url, headers:, body:|
+      calls << ['PUT', url.split('/v1/').last, JSON.parse(body), headers['Authorization']]
+      response
+    end
+    allow(http).to receive(:delete) do |url, headers:, body:|
+      calls << ['DELETE', url.split('/v1/').last, body, headers['Authorization']]
+      response
+    end
+    plan = Tinker::Model::Dto::CreateSubscriptionPlanRequestDto.new(name: 'Pro', amount: 10.5, currency: 'EUR', intervals: ['monthly'])
+    manager.update_plan('plan/a b', plan)
+    manager.delete_plan('plan/a b')
+    manager.list_invoices(subscription_id: 'sub-1', page: 2, page_size: 50)
+    manager.list_invoices
+    expect(calls.map { |c| c.first(3) }).to eq(
+      [
+        ['PUT', 'merchant/subscriptions/plans/plan%2Fa%20b', JSON.parse(JSON.generate(plan.to_hash))],
+        ['DELETE', 'merchant/subscriptions/plans/plan%2Fa%20b', nil],
+        ['GET', 'merchant/subscriptions/invoices?subscription_id=sub-1&page=2&page_size=50', nil],
+        ['GET', 'merchant/subscriptions/invoices', nil]
+      ]
+    )
+  end
+
   it 'sends every managed operation with exact payloads and escaped IDs' do
     checkout = Tinker::Model::Dto::ManagedCheckout.new(
       external_customer_id: 'workspace', email: 'buyer@example.com', name: 'Buyer', currency: 'EUR',

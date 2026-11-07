@@ -4,7 +4,7 @@ module Tinker
   module Webhook
     module Dto
       class PaymentEventDataDto
-        attr_reader :id, :status, :reference, :amount, :currency, :channel, :created_at, :paid_at
+        attr_reader :id, :status, :reference, :amount, :currency, :channel, :created_at, :paid_at, :country
 
         def initialize(data)
           @id = data['id']
@@ -15,6 +15,7 @@ module Tinker
           @channel = data['channel']
           @created_at = data['created_at']
           @paid_at = data['paid_at']
+          @country = data['country']
         end
 
         def to_hash
@@ -27,7 +28,7 @@ module Tinker
             'channel' => @channel,
             'created_at' => @created_at,
             'paid_at' => @paid_at
-          }
+          }.merge(@country ? { 'country' => @country } : {})
         end
       end
     end

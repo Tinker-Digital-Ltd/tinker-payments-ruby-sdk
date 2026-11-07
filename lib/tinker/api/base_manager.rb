@@ -64,9 +64,10 @@ module Tinker
       end
 
       def send_request(method, url, headers, body)
-        return @http_client.get(url, headers: headers) if method.to_s.upcase == 'GET'
+        verb = method.to_s.downcase
+        return @http_client.get(url, headers: headers) if verb == 'get'
 
-        @http_client.post(url, headers: headers, body: body)
+        @http_client.public_send(verb, url, headers: headers, body: body)
       end
 
       def decode_response(response)

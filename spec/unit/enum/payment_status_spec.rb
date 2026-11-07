@@ -22,6 +22,12 @@ RSpec.describe Tinker::Enum::PaymentStatus do
     expect(described_class.parse(nil)).to eq('pending')
   end
 
+  it 'defines every spec status' do
+    %w[pending authorised success failed blocked refunded partially_refunded cancelled expired reversed].each do |value|
+      expect(described_class.constants.map { |name| described_class.const_get(name) }).to include(value)
+    end
+  end
+
   it 'defines FAILED constant' do
     expect(Tinker::Enum::PaymentStatus::FAILED).to eq('failed')
   end
