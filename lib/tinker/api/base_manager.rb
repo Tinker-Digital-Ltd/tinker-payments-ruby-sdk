@@ -64,9 +64,10 @@ module Tinker
       end
 
       def send_request(method, url, headers, body)
-        return @http_client.get(url, headers: headers) if method.to_s.upcase == 'GET'
+        verb = method.to_s.downcase
+        return @http_client.get(url, headers: headers) if verb == 'get'
 
-        @http_client.post(url, headers: headers, body: body)
+        @http_client.public_send(verb, url, headers: headers, body: body)
       end
 
       def decode_response(response)
@@ -88,8 +89,11 @@ module Tinker
       end
 
       def api_error(response, result)
-        Exception::ApiException.new(extract_error_message(result), http_status: response.status_code,
-                                                                   details: result, headers: response.headers || {})
+        error = result.is_a?(Hash) && result['error'].is_a?(Hash) ? result['error'] : {}
+        feature = Exception::FeatureNotSupportedException
+        klass = error['code'] == feature::CODE ? feature : Exception::ApiException
+        klass.new(extract_error_message(result), http_status: response.status_code,
+                                                 details: result, headers: response.headers || {})
       end
 
       def extract_error_message(result)

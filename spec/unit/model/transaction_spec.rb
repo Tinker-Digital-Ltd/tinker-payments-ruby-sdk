@@ -55,8 +55,14 @@ RSpec.describe Tinker::Model::Transaction do
     end
   end
 
+  it 'keeps an unknown status as sent' do
+    transaction = described_class.new('status' => 'unknown-provider-status')
+    expect(transaction.status).to eq('unknown-provider-status')
+    expect(transaction).not_to be_pending
+  end
+
   describe 'status fallback without transaction details' do
-    [{}, { 'status' => 'unknown-provider-status' }].each do |data|
+    [{}].each do |data|
       it "treats #{data.inspect} as pending" do
         transaction = described_class.new(data)
         expect(transaction).to be_pending

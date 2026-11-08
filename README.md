@@ -33,6 +33,8 @@ result = tinker.transactions.query(Tinker::Model::Dto::QueryPaymentRequestDto.ne
 ))
 ```
 
+Any registered provider id works as `gateway:`, so new providers need no SDK release; `Tinker::Enum::Gateway` only lists common ones (`PESAPAL` included). List providers and their features with `tinker.transactions.capabilities(currency: 'KES', country: 'KE')` (both optional). Payment statuses are strings: `completed` becomes `success`, and unknown future statuses are kept as sent (`reversed` is `PaymentStatus::REVERSED`).
+
 Payments use currency units. Mpesa requires `customer_phone`; `return_url` is the browser destination, while webhooks are configured separately in the dashboard. Hosted providers may return `payment.initiation_data&.authorization_url` for a redirect.
 
 ### Apple Pay / Google Pay
@@ -42,7 +44,7 @@ request = Tinker::Model::Dto::InitiatePaymentRequestDto.new(
   amount: 100, currency: 'USD', gateway: Tinker::Enum::Gateway::STRIPE,
   merchant_reference: 'ORDER-12345',
   return_url: 'https://merchant.example/payment/return',
-  payment_method: 'apple_pay' # or 'google_pay'
+  payment_method: 'apple_pay' # or 'google_pay'; 'bnpl' is Klarna on Stripe Checkout
 )
 data = tinker.transactions.initiate(request).initiation_data
 # return data.client_secret and data.publishable_key to the browser as JSON
@@ -71,6 +73,59 @@ data = tinker.transactions.initiate(request).initiation_data
 The result arrives through `payment.*` webhooks. Apple Pay and Google Pay on the web need the checkout domain registered with Stripe.
 
 Plan-based subscriptions use `tinker.subscriptions.create_plan`, `list_plans`, `create`, `list` and `cancel` with the request DTOs in `Tinker::Model::Dto`.
+
+## Provider examples
+
+Every provider takes the same request. Keys and values are fake.
+
+```ruby
+dto = Tinker::Model::Dto
+tx = tinker.transactions
+return_url = 'https://shop.example/return'
+
+# Redirect (Paystack, Pesapal, PayPal, Flutterwave, DPO, Interswitch, Adyen, Plaid, hosted Stripe):
+# send the customer to payment.initiation_data&.authorization_url.
+payment = tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 2500, currency: 'NGN', gateway: 'paystack', merchant_reference: 'ORDER-1',
+  return_url: return_url, customer_email: 'jane@example.com'
+))
+
+# Phone approval (M-Pesa, MTN MoMo): no authorization_url. The customer approves on their phone
+# and the result arrives as a payment.completed or payment.failed webhook.
+tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 100, currency: 'KES', gateway: 'mpesa', merchant_reference: 'ORDER-2',
+  return_url: return_url, customer_phone: '+254712345678'
+))
+
+# Klarna (payment_method 'bnpl' on Stripe or Adyen) is captured at once. Adyen also needs country
+# (AT DK FI DE NO SE CH NL GB US) and that country's currency.
+tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 49.9, currency: 'EUR', gateway: 'adyen', merchant_reference: 'ORDER-3',
+  return_url: return_url, customer_email: 'jane@example.com', country: 'DE', payment_method: 'bnpl'
+))
+
+# Plaid (plaid_transfer, plaid_payments): customer_name is required.
+# Payment Initiation INITIATED counts as paid.
+tx.initiate(dto::InitiatePaymentRequestDto.new(
+  amount: 40, currency: 'GBP', gateway: 'plaid_payments', merchant_reference: 'ORDER-4',
+  return_url: return_url, customer_email: 'jane@example.com', customer_name: 'Jane Doe', country: 'GB'
+))
+
+# Ask first, then handle a refusal.
+tx.capabilities(currency: 'KES', country: 'KE')['providers'].each do |p|
+  puts "#{p['gateway']} #{p['capabilities']['pay_mobile_money']}"
+end
+begin
+  tx.initiate(dto::InitiatePaymentRequestDto.new(
+    amount: 100, currency: 'KES', gateway: 'mpesa', merchant_reference: 'ORDER-5',
+    return_url: return_url, customer_phone: '+254712345678', payment_method: 'apple_pay'
+  ))
+rescue Tinker::Exception::FeatureNotSupportedException => e
+  puts "#{e.gateway} #{e.feature} #{e.alternatives.join(',')}" # retry on one of the alternatives
+end
+```
+
+Pay-as-you-go apps use Tinker's provider credentials; your own need a paid plan (HTTP 403 `PAID_PLAN_REQUIRED`).
 
 ## Managed recurring billing
 
@@ -125,7 +180,7 @@ A non-checkout ID (`sub_...`) returns 400 `INVALID_ID`. An expired checkout send
 
 ### Trials with a required payment method
 
-Set `trial_days` (1 to 730) to collect a card at checkout and charge first when the trial ends. The SDK sends `trial_days` only when it is above 0, so checkouts without a trial keep working against servers released before trial support. A gateway without trial support returns HTTP 422 `TRIAL_UNSUPPORTED` with `outcome: not_applied`. Limiting a customer to one trial is the app's responsibility. Alternatively set `trial_end` to an exact end 48 hours to 730 days ahead; it cannot be combined with `trial_days` (HTTP 400), and the SDK sends it only when set.
+Set `trial_days` (1 to 730) to collect a card at checkout and charge first when the trial ends. The SDK sends `trial_days` only when it is above 0, so checkouts without a trial keep working against servers released before trial support. A gateway without trial support returns HTTP 422 `FEATURE_NOT_SUPPORTED` with `outcome: not_applied`. Limiting a customer to one trial is the app's responsibility. Alternatively set `trial_end` to an exact end 48 hours to 730 days ahead; it cannot be combined with `trial_days` (HTTP 400), and the SDK sends it only when set.
 
 ```ruby
 billing.checkout(Tinker::Model::Dto::ManagedCheckout.new(
@@ -212,6 +267,8 @@ After verification, acknowledge `setup.webhook_test` (`source: onboarding`) with
 ## Errors and response metadata
 
 API errors retain `http_status`, `error_code`, `provider_code`, `request_id`, `retry_after`, `outcome` and the full envelope in `details`. Request IDs prefer the response body over `X-Request-ID`; `Retry-After` remains its original string. Non-JSON HTTP failures retain status/headers and an uncertain outcome. Only an explicit `not_applied` outcome confirms no mutation. Use `manager.last_meta` or `tinker.last_auth_meta` for response metadata.
+
+An unsupported feature raises `Tinker::Exception::FeatureNotSupportedException` (an `ApiException`) with `gateway`, `feature` and `alternatives`; it replaces the former `CHECKOUT_CANCELLATION_UNSUPPORTED` code.
 
 ```ruby
 begin

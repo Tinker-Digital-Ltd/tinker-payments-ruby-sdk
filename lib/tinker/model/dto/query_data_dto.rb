@@ -4,22 +4,18 @@ module Tinker
   module Model
     module Dto
       class QueryDataDto
-        attr_reader :id, :status, :reference, :amount, :currency, :paid_at, :created_at, :channel
+        attr_reader :id, :status, :reference, :amount, :currency, :paid_at, :created_at, :channel, :country
 
         def initialize(data)
           @id = data['id']
-          status_value = data['status'] || 'pending'
-          @status = begin
-            Tinker::Enum::PaymentStatus.const_get(status_value.upcase)
-          rescue NameError
-            Tinker::Enum::PaymentStatus::PENDING
-          end
+          @status = Tinker::Enum::PaymentStatus.parse(data['status'])
           @reference = data['reference']
           @amount = data['amount'].to_f
           @currency = data['currency']
           @paid_at = data['paid_at']
           @created_at = data['created_at']
           @channel = data['channel']
+          @country = data['country']
         end
 
         def to_hash
@@ -32,7 +28,7 @@ module Tinker
             paid_at: @paid_at,
             created_at: @created_at,
             channel: @channel
-          }
+          }.merge(@country ? { country: @country } : {})
         end
       end
     end

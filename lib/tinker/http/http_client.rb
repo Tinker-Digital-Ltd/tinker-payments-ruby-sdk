@@ -19,6 +19,14 @@ module Tinker
         request(url, Net::HTTP::Post, headers: headers, body: body)
       end
 
+      def put(url, headers: {}, body: nil)
+        request(url, Net::HTTP::Put, headers: headers, body: body)
+      end
+
+      def delete(url, headers: {}, body: nil)
+        request(url, Net::HTTP::Delete, headers: headers, body: body)
+      end
+
       private
 
       def request(url, request_class, headers:, body: nil)
