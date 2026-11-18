@@ -58,6 +58,14 @@ module Tinker
         @source == 'settlement'
       end
 
+      def entitlement_data
+        @data.is_a?(Dto::EntitlementEventDataDto) ? @data : nil
+      end
+
+      def customer_data
+        @data.is_a?(Dto::CustomerEventDataDto) ? @data : nil
+      end
+
       def payment_data
         @data.is_a?(Dto::PaymentEventDataDto) ? @data : nil
       end
@@ -83,33 +91,39 @@ module Tinker
 
       private
 
+      RESOURCE_TYPES = {
+        'checkout.cancellation.updated' => Model::CheckoutCancellation,
+        'refund.updated' => Model::Refund,
+        'withdrawal.updated' => Model::Payout
+      }.freeze
+      SOURCE_DTOS = {
+        'customer' => Dto::CustomerEventDataDto,
+        'onboarding' => Dto::OnboardingEventDataDto,
+        'payment' => Dto::PaymentEventDataDto,
+        'subscription' => Dto::SubscriptionEventDataDto,
+        'invoice' => Dto::InvoiceEventDataDto,
+        'settlement' => Dto::SettlementEventDataDto
+      }.freeze
+      private_constant :RESOURCE_TYPES, :SOURCE_DTOS
+
       def create_event_data(data, source)
-        resource_types = {
-          'checkout.cancellation.updated' => Model::CheckoutCancellation,
-          'refund.updated' => Model::Refund,
-          'withdrawal.updated' => Model::Payout
-        }
-        resource_type = resource_types[@type.to_s.sub(/\.v[^.]+\z/, '')] if source == 'payment'
+        return Dto::EntitlementEventDataDto.new(data) if entitlement_source?(source)
+
+        resource_type = RESOURCE_TYPES[@type.to_s.sub(/\.v[^.]+\z/, '')] if source == 'payment'
         return resource_type.new(data.fetch('resource', {})) if resource_type
 
         source_event_data(data, source)
       end
 
+      def entitlement_source?(source)
+        source == 'entitlement' || (source == 'payment' && @type == 'purchase.completed')
+      end
+
       def source_event_data(data, source)
-        case source
-        when 'onboarding'
-          Dto::OnboardingEventDataDto.new(data)
-        when 'payment'
-          Dto::PaymentEventDataDto.new(data)
-        when 'subscription'
-          Dto::SubscriptionEventDataDto.new(data)
-        when 'invoice'
-          Dto::InvoiceEventDataDto.new(data)
-        when 'settlement'
-          Dto::SettlementEventDataDto.new(data)
-        else
-          raise Exception::InvalidPayloadException.new("Unknown webhook source: #{source}", Exception::ExceptionCode::INVALID_PAYLOAD)
-        end
+        dto = SOURCE_DTOS[source]
+        return dto.new(data) if dto
+
+        raise Exception::InvalidPayloadException.new("Unknown webhook source: #{source}", Exception::ExceptionCode::INVALID_PAYLOAD)
       end
     end
   end

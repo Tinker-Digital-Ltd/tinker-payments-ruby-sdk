@@ -5,7 +5,8 @@ module Tinker
     module Dto
       class SubscriptionEventDataDto
         attr_reader :id, :status, :plan_id, :account_id, :current_period_start, :current_period_end, :created_at,
-                    :cancelled_at, :paused_at, :reactivated_at
+                    :cancelled_at, :paused_at, :reactivated_at, :product_id, :entitlement_ids, :store, :period_type,
+                    :expiration_at, :grace_period_expiration_at
 
         def initialize(data)
           @id = data['subscription_id'] || data['id']
@@ -18,6 +19,12 @@ module Tinker
           @cancelled_at = data['cancelled_at']
           @paused_at = data['paused_at']
           @reactivated_at = data['reactivated_at']
+          @product_id = data['product_id']
+          @entitlement_ids = data['entitlement_ids'] || []
+          @store = data['store']
+          @period_type = data['period_type']
+          @expiration_at = data['expiration_at']
+          @grace_period_expiration_at = data['grace_period_expiration_at']
         end
 
         def to_hash
@@ -32,7 +39,13 @@ module Tinker
             created_at: @created_at,
             cancelled_at: @cancelled_at,
             paused_at: @paused_at,
-            reactivated_at: @reactivated_at
+            reactivated_at: @reactivated_at,
+            product_id: @product_id,
+            entitlement_ids: @entitlement_ids,
+            store: @store,
+            period_type: @period_type,
+            expiration_at: @expiration_at,
+            grace_period_expiration_at: @grace_period_expiration_at
           }
         end
       end

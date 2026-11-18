@@ -8,6 +8,7 @@ require_relative 'auth/authentication_manager'
 require_relative 'api/base_manager'
 require_relative 'api/transaction_manager'
 require_relative 'api/subscription_manager'
+require_relative 'api/access_managers'
 require_relative 'api/payout_manager'
 require_relative 'webhook/webhook_handler'
 
@@ -38,6 +39,46 @@ module Tinker
 
     def payouts
       @payouts ||= Api::PayoutManager.new(config: @config, http_client: @http_client, auth_manager: @auth_manager)
+    end
+
+    def customers
+      @customers ||= Api::CustomerManager.new(config: @config, http_client: @http_client, auth_manager: @auth_manager)
+    end
+
+    def entitlements
+      @entitlements ||= Api::EntitlementManager.new(
+        config: @config,
+        http_client: @http_client,
+        auth_manager: @auth_manager
+      )
+    end
+
+    def products
+      @products ||= Api::ProductManager.new(config: @config, http_client: @http_client, auth_manager: @auth_manager)
+    end
+
+    def offerings
+      @offerings ||= Api::OfferingManager.new(config: @config, http_client: @http_client, auth_manager: @auth_manager)
+    end
+
+    def metrics
+      @metrics ||= Api::MetricsManager.new(config: @config, http_client: @http_client, auth_manager: @auth_manager)
+    end
+
+    def experiments
+      @experiments ||= Api::ExperimentManager.new(
+        config: @config,
+        http_client: @http_client,
+        auth_manager: @auth_manager
+      )
+    end
+
+    def integrations
+      @integrations ||= Api::IntegrationManager.new(
+        config: @config,
+        http_client: @http_client,
+        auth_manager: @auth_manager
+      )
     end
 
     def webhooks

@@ -127,6 +127,34 @@ end
 
 Pay-as-you-go apps use Tinker's provider credentials; your own need a paid plan (HTTP 403 `PAID_PLAN_REQUIRED`).
 
+## Customer access
+
+Server-side access for one-time products and subscriptions. Responses are unwrapped data hashes (lists are arrays).
+
+```ruby
+customers = client.customers
+customers.get('cust-123')
+customers.get_entitlement('cust-123', 'pro')
+customers.grant_promotional_entitlement('cust-123', 'pro', { duration: 'P7D' })
+customers.revoke_promotional_entitlements('cust-123', 'pro')
+customers.alias('cust-123', body)
+customers.transfer('cust-123', body)
+customers.set_attributes('cust-123', body)
+customers.get_offerings('cust-123')
+customers.create_token('cust-123') # short-lived token for client SDKs
+
+client.entitlements # list, create, get, update, delete, attach_products, detach_products
+client.products     # list, create, get, update
+client.offerings    # list, create, get, update, delete
+client.experiments  # list, create, get, stop
+client.integrations # list, upsert, delete, test (kind: slack, segment, mixpanel)
+client.metrics.get(from: '2026-01-01', to: '2026-01-31') # dates optional
+client.subscriptions.list_renewal_prompts('sub-123')
+client.subscriptions.send_renewal_prompt('sub-123')
+```
+
+`InitiatePaymentRequestDto` accepts `product_id:`, `external_customer_id:` and `presented_offering_id:`. Webhooks add `purchase.completed`, `entitlement.*` (`entitlement_data`), `customer.transferred` (`customer_data`) and `subscription.billing_issue`.
+
 ## Managed recurring billing
 
 Checkout uses exact integer minor-unit prices (`15000` = EUR 150.00), a `month` or `year` interval, and a quantity. The SDK does not convert prices or apply discounts. Responses are unwrapped data maps/objects.

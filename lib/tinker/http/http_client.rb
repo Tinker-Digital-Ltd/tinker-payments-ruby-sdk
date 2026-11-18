@@ -23,6 +23,10 @@ module Tinker
         request(url, Net::HTTP::Put, headers: headers, body: body)
       end
 
+      def patch(url, headers: {}, body: nil)
+        request(url, Net::HTTP::Patch, headers: headers, body: body)
+      end
+
       def delete(url, headers: {}, body: nil)
         request(url, Net::HTTP::Delete, headers: headers, body: body)
       end
