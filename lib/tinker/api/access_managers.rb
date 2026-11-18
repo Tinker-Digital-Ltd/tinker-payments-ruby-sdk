@@ -56,12 +56,12 @@ module Tinker
       private
 
       def customer_path(id)
-        "merchant/customers/#{escape(id)}"
+        "#{Config::Endpoints::CUSTOMERS_PATH}/#{escape(id)}"
       end
     end
 
     class EntitlementManager < AccessManager
-      PATH = 'merchant/entitlements'
+      PATH = Config::Endpoints::ENTITLEMENTS_PATH
 
       def list
         list_of(PATH)
@@ -93,7 +93,7 @@ module Tinker
     end
 
     class ProductManager < AccessManager
-      PATH = 'merchant/products'
+      PATH = Config::Endpoints::PRODUCTS_PATH
 
       def list
         list_of(PATH)
@@ -113,7 +113,7 @@ module Tinker
     end
 
     class OfferingManager < AccessManager
-      PATH = 'merchant/offerings'
+      PATH = Config::Endpoints::OFFERINGS_PATH
 
       def list
         list_of(PATH)
@@ -139,12 +139,13 @@ module Tinker
     class MetricsManager < AccessManager
       def get(from: nil, to: nil)
         query = URI.encode_www_form({ from: from, to: to }.compact)
-        request('GET', query.empty? ? 'merchant/metrics' : "merchant/metrics?#{query}", nil)
+        path = Config::Endpoints::METRICS_PATH
+        request('GET', query.empty? ? path : "#{path}?#{query}", nil)
       end
     end
 
     class ExperimentManager < AccessManager
-      PATH = 'merchant/experiments'
+      PATH = Config::Endpoints::EXPERIMENTS_PATH
 
       def list
         list_of(PATH)
@@ -164,7 +165,7 @@ module Tinker
     end
 
     class IntegrationManager < AccessManager
-      PATH = 'merchant/integrations'
+      PATH = Config::Endpoints::INTEGRATIONS_PATH
 
       def list
         list_of(PATH)
