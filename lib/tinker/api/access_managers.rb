@@ -16,7 +16,7 @@ module Tinker
     end
 
     class CustomerManager < AccessManager
-      def get(id)
+      def get_customer(id)
         request('GET', customer_path(id), nil)
       end
 
@@ -24,7 +24,8 @@ module Tinker
         request('GET', "#{customer_path(id)}/entitlements/#{escape(identifier)}", nil)
       end
 
-      def grant_promotional_entitlement(id, identifier, body = nil)
+      def grant_promotional_entitlement(id, identifier, duration: nil, end_time: nil)
+        body = { duration: duration, end_time: end_time }.compact
         request('POST', "#{customer_path(id)}/entitlements/#{escape(identifier)}/promotional", body)
       end
 
@@ -32,24 +33,24 @@ module Tinker
         request('POST', "#{customer_path(id)}/entitlements/#{escape(identifier)}/revoke_promotionals", nil)
       end
 
-      def alias(id, body)
-        request('POST', "#{customer_path(id)}/alias", body)
+      def alias(id, alias_id)
+        request('POST', "#{customer_path(id)}/alias", { alias: alias_id })
       end
 
-      def transfer(id, body)
-        request('POST', "#{customer_path(id)}/transfer", body)
+      def transfer(id, to)
+        request('POST', "#{customer_path(id)}/transfer", { to: to })
       end
 
-      def set_attributes(id, body)
-        request('POST', "#{customer_path(id)}/attributes", body)
+      def set_attributes(id, attributes)
+        request('POST', "#{customer_path(id)}/attributes", { attributes: attributes })
       end
 
       def get_offerings(id)
         request('GET', "#{customer_path(id)}/offerings", nil)
       end
 
-      def create_token(id)
-        request('POST', "#{customer_path(id)}/token", nil)
+      def create_token(id, expires_in: nil)
+        request('POST', "#{customer_path(id)}/token", expires_in && { expires_in: expires_in })
       end
 
       private
@@ -74,20 +75,20 @@ module Tinker
         request('GET', "#{PATH}/#{escape(id)}", nil)
       end
 
-      def update(id, body)
-        request('PATCH', "#{PATH}/#{escape(id)}", body)
+      def update(id, display_name)
+        request('PATCH', "#{PATH}/#{escape(id)}", { display_name: display_name })
       end
 
       def delete(id)
         request('DELETE', "#{PATH}/#{escape(id)}", nil)
       end
 
-      def attach_products(id, body)
-        request('POST', "#{PATH}/#{escape(id)}/attach_products", body)
+      def attach_products(id, product_ids)
+        request('POST', "#{PATH}/#{escape(id)}/attach_products", { product_ids: product_ids })
       end
 
-      def detach_products(id, body)
-        request('POST', "#{PATH}/#{escape(id)}/detach_products", body)
+      def detach_products(id, product_ids)
+        request('POST', "#{PATH}/#{escape(id)}/detach_products", { product_ids: product_ids })
       end
     end
 
@@ -169,7 +170,7 @@ module Tinker
         list_of(PATH)
       end
 
-      def upsert(kind, body)
+      def put(kind, body)
         request('PUT', "#{PATH}/#{escape(kind)}", body)
       end
 

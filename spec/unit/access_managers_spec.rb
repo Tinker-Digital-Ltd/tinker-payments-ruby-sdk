@@ -25,26 +25,28 @@ RSpec.describe 'customer access managers' do
 
   it 'calls every customer route' do
     m = Tinker::Api::CustomerManager.new(**args)
-    m.get('u/1')
+    m.get_customer('u/1')
     m.get_entitlement('u1', 'pro')
-    m.grant_promotional_entitlement('u1', 'pro', { duration: 'P7D' })
+    m.grant_promotional_entitlement('u1', 'pro', duration: 'P7D')
     m.revoke_promotional_entitlements('u1', 'pro')
-    m.alias('u1', { new_id: 'a' })
-    m.transfer('u1', { to: 'u2' })
-    m.set_attributes('u1', { attributes: { plan: 'x' } })
+    m.alias('u1', 'a')
+    m.transfer('u1', 'u2')
+    m.set_attributes('u1', { plan: 'x' })
     m.get_offerings('u1')
     m.create_token('u1')
+    m.create_token('u1', expires_in: 300)
     expect(calls.map { |c| c.first(3) }).to eq(
       [
         ['GET', 'merchant/customers/u%2F1', nil],
         ['GET', 'merchant/customers/u1/entitlements/pro', nil],
         ['POST', 'merchant/customers/u1/entitlements/pro/promotional', { 'duration' => 'P7D' }],
         ['POST', 'merchant/customers/u1/entitlements/pro/revoke_promotionals', nil],
-        ['POST', 'merchant/customers/u1/alias', { 'new_id' => 'a' }],
+        ['POST', 'merchant/customers/u1/alias', { 'alias' => 'a' }],
         ['POST', 'merchant/customers/u1/transfer', { 'to' => 'u2' }],
         ['POST', 'merchant/customers/u1/attributes', { 'attributes' => { 'plan' => 'x' } }],
         ['GET', 'merchant/customers/u1/offerings', nil],
-        ['POST', 'merchant/customers/u1/token', nil]
+        ['POST', 'merchant/customers/u1/token', nil],
+        ['POST', 'merchant/customers/u1/token', { 'expires_in' => 300 }]
       ]
     )
     expect(calls.map(&:last).uniq).to eq(['Bearer token'])
@@ -57,27 +59,28 @@ RSpec.describe 'customer access managers' do
     x = Tinker::Api::ExperimentManager.new(**args)
     i = Tinker::Api::IntegrationManager.new(**args)
     body = { 'k' => 'v' }
-    [e.list, e.create(body), e.get('e1'), e.update('e1', body), e.delete('e1'),
-     e.attach_products('e1', body), e.detach_products('e1', body),
+    [e.list, e.create(body), e.get('e1'), e.update('e1', 'n'), e.delete('e1'),
+     e.attach_products('e1', ['p']), e.detach_products('e1', ['p']),
      p.list, p.create(body), p.get('p1'), p.update('p1', body),
      o.list, o.create(body), o.get('o1'), o.update('o1', body), o.delete('o1'),
      x.list, x.create(body), x.get('x1'), x.stop('x1'),
-     i.list, i.upsert('slack', body), i.delete('slack'), i.test('slack')]
+     i.list, i.put('slack', body), i.delete('slack'), i.test('slack')]
     metrics = Tinker::Api::MetricsManager.new(**args)
     metrics.get
     metrics.get(from: '2026-01-01', to: '2026-01-31')
     subs = Tinker::Api::SubscriptionManager.new(**args)
-    subs.list_renewal_prompts('sub_1')
+    subs.list_renewal_prompts
+    subs.list_renewal_prompts(subscription_id: 'sub_1')
     subs.send_renewal_prompt('sub_1')
     expect(calls.map { |c| c.first(3) }).to eq(
       [
         ['GET', 'merchant/entitlements', nil],
         ['POST', 'merchant/entitlements', body],
         ['GET', 'merchant/entitlements/e1', nil],
-        ['PATCH', 'merchant/entitlements/e1', body],
+        ['PATCH', 'merchant/entitlements/e1', { 'display_name' => 'n' }],
         ['DELETE', 'merchant/entitlements/e1', nil],
-        ['POST', 'merchant/entitlements/e1/attach_products', body],
-        ['POST', 'merchant/entitlements/e1/detach_products', body],
+        ['POST', 'merchant/entitlements/e1/attach_products', { 'product_ids' => ['p'] }],
+        ['POST', 'merchant/entitlements/e1/detach_products', { 'product_ids' => ['p'] }],
         ['GET', 'merchant/products', nil],
         ['POST', 'merchant/products', body],
         ['GET', 'merchant/products/p1', nil],
@@ -97,6 +100,7 @@ RSpec.describe 'customer access managers' do
         ['POST', 'merchant/integrations/slack/test', nil],
         ['GET', 'merchant/metrics', nil],
         ['GET', 'merchant/metrics?from=2026-01-01&to=2026-01-31', nil],
+        ['GET', 'merchant/subscriptions/renewal_prompts', nil],
         ['GET', 'merchant/subscriptions/renewal_prompts?subscription_id=sub_1', nil],
         ['POST', 'merchant/subscriptions/sub_1/renewal_prompt', nil]
       ]
@@ -129,8 +133,9 @@ RSpec.describe 'customer access managers' do
     moved = event.call('customer.transferred', 'customer', 'transferred_from' => ['a'], 'transferred_to' => ['b'])
     expect(moved.customer_data.transferred_to).to eq(['b'])
     sub = event.call('subscription.billing_issue', 'subscription',
-                     'subscription_id' => 's', 'entitlement_ids' => ['pro'], 'grace_period_expiration_at' => 'g')
+                     'subscription_id' => 's', 'external_customer_id' => 'u1', 'entitlement_ids' => ['pro'], 'grace_period_expiration_at' => 'g')
     expect(sub.subscription_data.grace_period_expiration_at).to eq('g')
     expect(sub.subscription_data.entitlement_ids).to eq(['pro'])
+    expect(sub.subscription_data.external_customer_id).to eq('u1')
   end
 end
