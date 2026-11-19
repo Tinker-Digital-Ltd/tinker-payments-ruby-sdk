@@ -135,13 +135,13 @@ Server-side access for one-time products and subscriptions. Responses are unwrap
 customers = client.customers
 customers.get_customer('cust-123')
 customers.get_entitlement('cust-123', 'pro')
-customers.grant_promotional_entitlement('cust-123', 'pro', duration: 'P7D')
+customers.grant_promotional_entitlement('cust-123', 'pro', duration: 'P7D') # or end_time: (RFC3339), mutually exclusive with duration
 customers.revoke_promotional_entitlements('cust-123', 'pro')
 customers.alias('cust-123', 'alias-id')
 customers.transfer('cust-123', 'cust-456')
 customers.set_attributes('cust-123', { plan: 'gold' })
 customers.get_offerings('cust-123')
-customers.create_token('cust-123', expires_in: 3600) # short-lived token for client SDKs
+customers.create_token('cust-123', expires_in: 3600) # short-lived token for client SDKs; the app needs a public key first: new apps get one automatically, otherwise 409 PUBLIC_KEY_REQUIRED
 
 client.entitlements # list, create, get, update(id, display_name), delete, attach_products(id, product_ids), detach_products(id, product_ids)
 client.products     # list, create, get, update
