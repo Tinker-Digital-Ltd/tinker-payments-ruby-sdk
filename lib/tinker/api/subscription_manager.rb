@@ -47,11 +47,10 @@ module Tinker
         wrapped['value'].is_a?(Array) ? wrapped['value'] : []
       end
 
-      def list_renewal_prompts(subscription_id: nil)
-        query = URI.encode_www_form({ subscription_id: subscription_id }.compact)
+      def list_renewal_prompts(subscription_id: nil, page: nil, page_size: nil)
+        query = URI.encode_www_form({ subscription_id: subscription_id, page: page, page_size: page_size }.compact)
         path = "#{Config::Endpoints::SUBSCRIPTION_BASE_PATH}/renewal_prompts"
-        wrapped = request('GET', query.empty? ? path : "#{path}?#{query}", nil)
-        wrapped['value'].is_a?(Array) ? wrapped['value'] : []
+        request('GET', query.empty? ? path : "#{path}?#{query}", nil)
       end
 
       def send_renewal_prompt(subscription_id)

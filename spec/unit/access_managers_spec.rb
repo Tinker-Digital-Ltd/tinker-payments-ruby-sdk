@@ -71,6 +71,7 @@ RSpec.describe 'customer access managers' do
     subs = Tinker::Api::SubscriptionManager.new(**args)
     subs.list_renewal_prompts
     subs.list_renewal_prompts(subscription_id: 'sub_1')
+    subs.list_renewal_prompts(subscription_id: 'sub_1', page: 2, page_size: 50)
     subs.send_renewal_prompt('sub_1')
     expect(calls.map { |c| c.first(3) }).to eq(
       [
@@ -102,6 +103,7 @@ RSpec.describe 'customer access managers' do
         ['GET', 'merchant/metrics?from=2026-01-01&to=2026-01-31', nil],
         ['GET', 'merchant/subscriptions/renewal_prompts', nil],
         ['GET', 'merchant/subscriptions/renewal_prompts?subscription_id=sub_1', nil],
+        ['GET', 'merchant/subscriptions/renewal_prompts?subscription_id=sub_1&page=2&page_size=50', nil],
         ['POST', 'merchant/subscriptions/sub_1/renewal_prompt', nil]
       ]
     )

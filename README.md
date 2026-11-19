@@ -72,8 +72,6 @@ data = tinker.transactions.initiate(request).initiation_data
 
 The result arrives through `payment.*` webhooks. Apple Pay and Google Pay on the web need the checkout domain registered with Stripe.
 
-Plan-based subscriptions use `tinker.subscriptions.create_plan`, `list_plans`, `create`, `list` and `cancel` with the request DTOs in `Tinker::Model::Dto`.
-
 ## Provider examples
 
 Every provider takes the same request. Keys and values are fake.
@@ -127,33 +125,26 @@ end
 
 Pay-as-you-go apps use Tinker's provider credentials; your own need a paid plan (HTTP 403 `PAID_PLAN_REQUIRED`).
 
-## Customer access
-
-Server-side access for one-time products and subscriptions. Responses are unwrapped data hashes (lists are arrays).
+## Plan subscriptions
 
 ```ruby
-customers = client.customers
-customers.get_customer('cust-123')
-customers.get_entitlement('cust-123', 'pro')
-customers.grant_promotional_entitlement('cust-123', 'pro', duration: 'P7D') # or end_time: (RFC3339), mutually exclusive with duration
-customers.revoke_promotional_entitlements('cust-123', 'pro')
-customers.alias('cust-123', 'alias-id')
-customers.transfer('cust-123', 'cust-456')
-customers.set_attributes('cust-123', { plan: 'gold' })
-customers.get_offerings('cust-123')
-customers.create_token('cust-123', expires_in: 3600) # short-lived token for client SDKs; the app needs a public key first: new apps get one automatically, otherwise 409 PUBLIC_KEY_REQUIRED
-
-client.entitlements # list, create, get, update(id, display_name), delete, attach_products(id, product_ids), detach_products(id, product_ids)
-client.products     # list, create, get, update
-client.offerings    # list, create, get, update, delete
-client.experiments  # list, create, get, stop
-client.integrations # list, put, delete, test (kind: slack, segment, mixpanel)
-client.metrics.get(from: '2026-01-01', to: '2026-01-31') # dates optional
-client.subscriptions.list_renewal_prompts # subscription_id: optional
-client.subscriptions.send_renewal_prompt('sub-123')
+subscriptions = client.subscriptions
+plan = subscriptions.create_plan(
+  Tinker::Model::Dto::CreateSubscriptionPlanRequestDto.new(name: 'Pro', amount: 1000, currency: 'KES', intervals: ['monthly'])
+)
+subscriptions.list_plans
+subscription = subscriptions.create(
+  Tinker::Model::Dto::CreateSubscriptionRequestDto.new(
+    plan_id: plan['id'], gateway: 'stripe',
+    customer: Tinker::Model::Dto::SubscriptionCustomerDto.new(external_customer_id: 'cust_123', name: 'Jane Doe', email: 'customer@example.com')
+  )
+)
+subscriptions.list(plan_id: 'plan_123', external_customer_id: 'cust_123') # both optional
+subscriptions.update_plan(plan['id'], Tinker::Model::Dto::CreateSubscriptionPlanRequestDto.new(name: 'Pro', amount: 10, currency: 'EUR', intervals: ['monthly']))
+subscriptions.delete_plan(plan['id'])
+subscriptions.list_invoices(subscription_id: 'sub_123', page: 1, page_size: 25) # all arguments optional
+subscriptions.cancel(subscription['subscription_id'])
 ```
-
-`InitiatePaymentRequestDto` accepts `product_id:`, `external_customer_id:` and `presented_offering_id:`. Webhooks add `purchase.completed`, `entitlement.*` (`entitlement_data`), `customer.transferred` (`customer_data`) and `subscription.billing_issue`.
 
 ## Managed recurring billing
 
@@ -238,7 +229,43 @@ For payment history, keep the returned `snapshot` across `next_cursor` pages unt
 
 Quarantine items with `reconciliation_reason` and verify every page before committing a scan. The snapshot is an event cutoff, not an immutable provider snapshot: rescan from the first page to discover later adjustments, then apply facts idempotently by payment/adjustment ID. Zero-cash invoices advance pagination without an item. Processing/dispute fees are excluded from eligible principal; currency conversion and customer credits need explicit reconciliation.
 
-## Refunds, merchant payouts and checkout cancellation
+## Customer access
+
+Server-side access for one-time products and subscriptions, keyed by your own customer ID. An unknown customer fails with 404 `CUSTOMER_NOT_FOUND`. Responses are unwrapped data hashes (lists are arrays).
+
+```ruby
+customers = client.customers
+customer = customers.get_customer('cust_123')
+pro = customers.get_entitlement('cust_123', 'pro')
+grant_access if pro['is_active']
+
+customers.grant_promotional_entitlement('cust_123', 'pro', duration: 'P1W') # or end_time: RFC3339, not both; neither grants access until revoked
+customers.revoke_promotional_entitlements('cust_123', 'pro')
+customers.alias('cust_123', 'anon_456')
+customers.transfer('anon_456', 'cust_123')
+customers.set_attributes('cust_123', { '$email' => 'jane@example.com' }) # nil removes an attribute
+offerings = customers.get_offerings('cust_123') # current_offering_identifier, experiment, offerings
+token = customers.create_token('cust_123', expires_in: 3600) # token, public_key, expires_at; 60 to 86400 seconds, default 3600; the app needs a public key first: new apps get one automatically, otherwise 409 PUBLIC_KEY_REQUIRED
+```
+
+Catalogue and reporting:
+
+```ruby
+pro = client.entitlements.create({ identifier: 'pro', display_name: 'Pro' })
+client.entitlements.attach_products(pro['id'], [product_id]) # also detach_products, list, get, update, delete
+client.products.create({ name: 'Credit pack', price: 5, currency: 'USD', access_period: 'P30D' }) # list, get, update
+client.offerings.create({ identifier: 'default', is_current: true, packages: [{ identifier: 'monthly', product_id: product_id }] }) # list, get, update, delete
+client.experiments.create({ name: 'Price test', control_offering_id: a, treatment_offering_id: b }) # list, get, stop
+client.integrations.put('slack', { secret: webhook_url, enabled: true }) # list, delete, test (kind: slack, segment, mixpanel)
+client.metrics.get(from: '2026-01-01', to: '2026-01-31') # both dates optional
+client.subscriptions.list_invoices(subscription_id: 'sub_123', page: 1, page_size: 25) # all arguments optional; returns items, total, page, page_size
+client.subscriptions.list_renewal_prompts(subscription_id: 'sub_123', page: 1, page_size: 25) # same paging and result shape
+client.subscriptions.send_renewal_prompt('sub_123')
+```
+
+`InitiatePaymentRequestDto` accepts `product_id:`, `external_customer_id:` and `presented_offering_id:`. Webhooks add `subscription.billing_issue`, `customer.transferred` (`customer_data`), `purchase.completed`, `entitlement.granted`, `entitlement.revoked` and `entitlement.expired` (`entitlement_data`).
+
+## Refunds, wallet withdrawals and checkout cancellation
 
 Payouts withdraw the merchant's available Tinker wallet balance to an existing
 verified payout account. The app owner enables SDK withdrawal access in the
