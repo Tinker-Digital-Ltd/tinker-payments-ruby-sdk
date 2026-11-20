@@ -77,6 +77,7 @@ RSpec.describe 'customer access managers' do
     subs.list_renewal_prompts(subscription_id: 'sub_1')
     subs.list_renewal_prompts(subscription_id: 'sub_1', page: 2, page_size: 50)
     subs.send_renewal_prompt('sub_1')
+    subs.uncancel('sub_1')
     expect(calls.map { |c| c.first(3) }).to eq(
       [
         ['GET', 'merchant/entitlements', nil],
@@ -108,7 +109,8 @@ RSpec.describe 'customer access managers' do
         ['GET', 'merchant/subscriptions/renewal_prompts', nil],
         ['GET', 'merchant/subscriptions/renewal_prompts?subscription_id=sub_1', nil],
         ['GET', 'merchant/subscriptions/renewal_prompts?subscription_id=sub_1&page=2&page_size=50', nil],
-        ['POST', 'merchant/subscriptions/sub_1/renewal_prompt', nil]
+        ['POST', 'merchant/subscriptions/sub_1/renewal_prompt', nil],
+        ['POST', 'merchant/subscriptions/sub_1/uncancel', nil]
       ]
     )
   end
@@ -143,5 +145,14 @@ RSpec.describe 'customer access managers' do
     expect(sub.subscription_data.grace_period_expiration_at).to eq('g')
     expect(sub.subscription_data.entitlement_ids).to eq(['pro'])
     expect(sub.subscription_data.external_customer_id).to eq('u1')
+    changed = event.call('subscription.product_changed', 'subscription',
+                         'subscription_id' => 's', 'product_id' => 'p2', 'previous_product_id' => 'p1',
+                         'previous_expiration_at' => 'x', 'cancel_reason' => 'UNKNOWN', 'environment' => 'SANDBOX',
+                         'presented_offering_id' => 'o', 'transaction_id' => 't1', 'original_transaction_id' => 't0')
+    data = changed.subscription_data
+    expect([data.product_id, data.previous_product_id, data.previous_expiration_at, data.cancel_reason,
+            data.expiration_reason, data.environment, data.presented_offering_id, data.transaction_id,
+            data.original_transaction_id]).to eq(['p2', 'p1', 'x', 'UNKNOWN', nil, 'SANDBOX', 'o', 't1', 't0'])
+    expect(event.call('purchase.completed', 'payment', 'environment' => 'SANDBOX').entitlement_data.environment).to eq('SANDBOX')
   end
 end

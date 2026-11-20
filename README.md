@@ -144,6 +144,7 @@ subscriptions.update_plan(plan['id'], Tinker::Model::Dto::CreateSubscriptionPlan
 subscriptions.delete_plan(plan['id'])
 subscriptions.list_invoices(subscription_id: 'sub_123', page: 1, page_size: 25) # all arguments optional
 subscriptions.cancel(subscription['subscription_id'])
+subscriptions.uncancel(subscription['subscription_id']) # undo a cancellation scheduled for the period end; 409 SUBSCRIPTION_ENDED, SUBSCRIPTION_NOT_SCHEDULED_TO_CANCEL or UNCANCEL_NOT_SUPPORTED
 ```
 
 ## Managed recurring billing
@@ -264,7 +265,7 @@ client.subscriptions.list_renewal_prompts(subscription_id: 'sub_123', page: 1, p
 client.subscriptions.send_renewal_prompt('sub_123')
 ```
 
-`InitiatePaymentRequestDto` accepts `product_id:`, `external_customer_id:` and `presented_offering_id:`. Webhooks add `subscription.billing_issue`, `customer.transferred` (`customer_data`), `purchase.completed`, `entitlement.granted`, `entitlement.revoked` and `entitlement.expired` (`entitlement_data`).
+`InitiatePaymentRequestDto` accepts `product_id:`, `external_customer_id:` and `presented_offering_id:`. Webhooks add `subscription.billing_issue`, `subscription.uncancelled`, `subscription.product_changed`, `subscription.extended`, `customer.transferred` (`customer_data`), `purchase.completed`, `entitlement.granted`, `entitlement.revoked` and `entitlement.expired` (`entitlement_data`).
 
 ## Refunds, wallet withdrawals and checkout cancellation
 

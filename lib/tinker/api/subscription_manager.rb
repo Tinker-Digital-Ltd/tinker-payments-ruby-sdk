@@ -62,6 +62,10 @@ module Tinker
         request('POST', "#{Config::Endpoints::SUBSCRIPTION_BASE_PATH}/#{subscription_id}/cancel", nil)
       end
 
+      def uncancel(subscription_id)
+        request('POST', "#{Config::Endpoints::SUBSCRIPTION_BASE_PATH}/#{subscription_id}/uncancel", nil)
+      end
+
       def checkout(request)
         request('POST', 'merchant/billing/checkout', request.to_hash)
       end
