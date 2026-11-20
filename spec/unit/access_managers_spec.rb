@@ -25,6 +25,8 @@ RSpec.describe 'customer access managers' do
 
   it 'calls every customer route' do
     m = Tinker::Api::CustomerManager.new(**args)
+    m.list_customers
+    m.list_customers(search: 'jo hn', page: 2, page_size: 50)
     m.get_customer('u/1')
     m.get_entitlement('u1', 'pro')
     m.grant_promotional_entitlement('u1', 'pro', duration: 'P7D')
@@ -37,6 +39,8 @@ RSpec.describe 'customer access managers' do
     m.create_token('u1', expires_in: 300)
     expect(calls.map { |c| c.first(3) }).to eq(
       [
+        ['GET', 'merchant/customers', nil],
+        ['GET', 'merchant/customers?search=jo+hn&page=2&page_size=50', nil],
         ['GET', 'merchant/customers/u%2F1', nil],
         ['GET', 'merchant/customers/u1/entitlements/pro', nil],
         ['POST', 'merchant/customers/u1/entitlements/pro/promotional', { 'duration' => 'P7D' }],

@@ -16,6 +16,12 @@ module Tinker
     end
 
     class CustomerManager < AccessManager
+      def list_customers(search: nil, page: nil, page_size: nil)
+        query = URI.encode_www_form({ search: search, page: page, page_size: page_size }.compact)
+        path = Config::Endpoints::CUSTOMERS_PATH
+        request('GET', query.empty? ? path : "#{path}?#{query}", nil)
+      end
+
       def get_customer(id)
         request('GET', customer_path(id), nil)
       end

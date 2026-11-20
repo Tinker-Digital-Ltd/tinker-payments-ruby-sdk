@@ -8,7 +8,7 @@ module Tinker
     class WebhookHandler
       def handle(payload)
         data = if payload.is_a?(String)
-                 JSON.parse(payload)
+                 JSON.parse(payload.dup.force_encoding(Encoding::UTF_8))
                else
                  payload
                end

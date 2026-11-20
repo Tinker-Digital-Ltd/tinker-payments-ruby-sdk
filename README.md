@@ -236,6 +236,7 @@ Server-side access for one-time products and subscriptions, keyed by your own cu
 ```ruby
 customers = client.customers
 customer = customers.get_customer('cust_123')
+page = customers.list_customers(search: 'jane', page: 1, page_size: 25) # all arguments optional; search is a prefix of the customer ID or email; max 50 per page; returns items (external_customer_id, first_seen, email, phone, active_entitlements), total, page, page_size
 pro = customers.get_entitlement('cust_123', 'pro')
 grant_access if pro['is_active']
 
@@ -255,7 +256,7 @@ pro = client.entitlements.create({ identifier: 'pro', display_name: 'Pro' })
 client.entitlements.attach_products(pro['id'], [product_id]) # also detach_products, list, get, update, delete
 client.products.create({ name: 'Credit pack', price: 5, currency: 'USD', access_period: 'P30D' }) # list, get, update
 client.offerings.create({ identifier: 'default', is_current: true, packages: [{ identifier: 'monthly', product_id: product_id }] }) # list, get, update, delete
-client.experiments.create({ name: 'Price test', control_offering_id: a, treatment_offering_id: b }) # list, get, stop
+client.experiments.create({ name: 'Price test', control_offering_id: a, treatment_offering_id: b }) # list, get, stop; control_offering_id and treatment_offering_id are null once an offering is deleted, so read control_offering_identifier and treatment_offering_identifier; result variants carry revenue_by_currency (currency, revenue, purchases)
 client.integrations.put('slack', { secret: webhook_url, enabled: true }) # list, delete, test (kind: slack, segment, mixpanel)
 client.metrics.get(from: '2026-01-01', to: '2026-01-31') # both dates optional
 client.subscriptions.list_invoices(subscription_id: 'sub_123', page: 1, page_size: 25) # all arguments optional; returns items, total, page, page_size
